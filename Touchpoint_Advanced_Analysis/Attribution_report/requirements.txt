@@ -1,0 +1,7 @@
+numpy==1.20.1
+pandas==1.2.3
+PyYAML==5.4.1
+scikit-learn==0.24.1
+pychattr==0.2.1
+causalnex==0.10.0
+matplotlib==3.3.4
