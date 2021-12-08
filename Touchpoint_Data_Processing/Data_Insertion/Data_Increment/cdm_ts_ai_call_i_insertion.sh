@@ -2,7 +2,7 @@ pt=$3
 hive --hivevar pt=$pt -e "set hive.exec.dynamic.partition.mode=nonstrict;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
-INSERT OVERWRITE TABLE marketing_modeling.dw_ts_ai_call_i PARTITION(pt,brand)
+INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_ai_call_i PARTITION(pt,brand)
 SELECT * FROM (
     SELECT phone AS mobile,
        detail['call_time'] AS action_time,

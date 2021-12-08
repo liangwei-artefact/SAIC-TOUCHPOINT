@@ -4,6 +4,10 @@ queue_name=marketing_modeling
 
 
 hive --hivevar pt=$pt --hivevar pt_data=$pt_date -e "
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
+
 DROP TABLE IF EXISTS marketing_modeling.tmp_dw_ts_activity_i;
 CREATE table IF NOT EXISTS marketing_modeling.tmp_dw_ts_activity_i 
 AS

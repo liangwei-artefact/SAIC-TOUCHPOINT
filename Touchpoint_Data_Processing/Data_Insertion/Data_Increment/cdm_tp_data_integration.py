@@ -27,9 +27,9 @@ hc.setConf("hive.exec.dynamic.partition.mode","nonstrict")
 
 pt = sys.arg[1]
 
-df_col = ['dw_ts_ccm_activity_i','dw_ts_online_activity_i','dw_ts_leads_i','dw_ts_register_i','dw_ts_wechat_i','dw_ts_scrm_i',
- 'dw_ts_sis_call_i','dw_ts_ai_call_i','dw_ts_sms_i','dw_ts_trial_i','dw_ts_followup_i','dw_ts_dlm_call_i','dw_ts_order_i',
- 'dw_ts_oppor_fail_i','dw_ts_activity_i','dw_ts_community_i','dw_ts_online_action_i']
+df_col = ['cdm_ts_ccm_activity_i','cdm_ts_online_activity_i','cdm_ts_leads_i','cdm_ts_register_i','cdm_ts_wechat_i','cdm_ts_scrm_i',
+ 'cdm_ts_sis_call_i','cdm_ts_ai_call_i','cdm_ts_sms_i','cdm_ts_trial_i','cdm_ts_followup_i','cdm_ts_dlm_call_i','cdm_ts_order_i',
+ 'cdm_ts_oppor_fail_i','cdm_ts_activity_i','cdm_ts_community_i','cdm_ts_online_action_i']
 
 for df in df_col:
     print('processing: ',df)
@@ -64,7 +64,7 @@ for k in beha_df.keys():
             and brand_id = 121
     '''.format(beha_df[k],source,k, pt))
     final_df.createOrReplaceTempView('final_df')
-    hc.sql('insert overwrite table marketing_modeling.dw_mg_tp_ts_all_i PARTITION (source,pt) select * from final_df')
+    hc.sql('insert overwrite table marketing_modeling.cdm_mg_tp_ts_all_i PARTITION (source,pt) select * from final_df')
 
 
 # 线索首触-品牌
@@ -87,8 +87,4 @@ for k in fir_contact.keys():
         and chinese_name = 'MG'
     '''.format(fir_contact[k],source,k, pt))
     final_df.createOrReplaceTempView('final_df')
-    hc.sql('insert overwrite table marketing_modeling.dw_mg_tp_ts_all_i PARTITION (source,pt) select * from final_df')
-
-a = asd + asd + where
-sdasdsad
-dsadsad
+    hc.sql('insert overwrite table marketing_modeling.cdm_mg_tp_ts_all_i PARTITION (source,pt) select * from final_df')

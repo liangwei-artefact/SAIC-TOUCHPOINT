@@ -6,7 +6,7 @@ SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
 SET mapreduce.map.memory.mb=4096;
 SET mapreduce.reduce.memory.mb=8192;
-INSERT OVERWRITE TABLE marketing_modeling.dw_ts_followup_i PARTITION (pt,brand)
+INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_followup_i PARTITION (pt,brand)
 SELECT * FROM
 (SELECT phone AS mobile,
        detail['actual_follow_time'] AS action_time,

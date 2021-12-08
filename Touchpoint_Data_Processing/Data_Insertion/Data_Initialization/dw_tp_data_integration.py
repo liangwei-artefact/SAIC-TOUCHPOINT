@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # /*********************************************************************
 # *模块: /Touchpoint_Data_Processing/Data_Insertion/Data_Initialization
-# *程序: dw_tp_data_integration.py
+# *程序: cdm_tp_data_integration.py
 # *功能: 把各触点小竖表数据抽取到大竖表 
 # *开发人: Xiaofeng XU
 # *开发日: 2021-06-22
@@ -40,29 +40,29 @@ suffix = brand_suffix_mapping[brand]
 brand_id_mapping = {'MG':121,'RW':101}
 
 # 抽取自加工小竖表
-df_col = ['dw_ts_ccm_activity_i',
-          'dw_ts_online_activity_i',
-          'dw_ts_leads_i',
-          'dw_ts_register_i',
-          'dw_ts_wechat_i',
-          'dw_ts_scrm_i',
-          'dw_ts_sis_call_i',
-          'dw_ts_ai_call_i',
-          'dw_ts_sms_i',
-          'dw_ts_trial_i',
-          'dw_ts_followup_i',
-          'dw_ts_dlm_call_i',
-          'dw_ts_order_i',
-          'dw_ts_oppor_fail_i',
-          'dw_ts_activity_i',
-          'dw_ts_community_i',
-          'dw_ts_online_action_i',
-          'dw_ts_oppor_fail_activation_i',
-          'dw_ts_completed_oppor_fail_i',
-          'dw_ts_app_activity_i',
-          'dw_ts_adhoc_app_activity_i',
-          'dw_ts_bind_i',
-		  'dw_ts_maintenance_i'
+df_col = ['cdm_ts_ccm_activity_i',
+          'cdm_ts_online_activity_i',
+          'cdm_ts_leads_i',
+          'cdm_ts_register_i',
+          'cdm_ts_wechat_i',
+          'cdm_ts_scrm_i',
+          'cdm_ts_sis_call_i',
+          'cdm_ts_ai_call_i',
+          'cdm_ts_sms_i',
+          'cdm_ts_trial_i',
+          'cdm_ts_followup_i',
+          'cdm_ts_dlm_call_i',
+          'cdm_ts_order_i',
+          'cdm_ts_oppor_fail_i',
+          'cdm_ts_activity_i',
+          'cdm_ts_community_i',
+          'cdm_ts_online_action_i',
+          'cdm_ts_oppor_fail_activation_i',
+          'cdm_ts_completed_oppor_fail_i',
+          'cdm_ts_app_activity_i',
+          'cdm_ts_adhoc_app_activity_i',
+          'cdm_ts_bind_i',
+		  'cdm_ts_maintenance_i'
          ]
 
 for df in df_col:
@@ -114,4 +114,4 @@ for k in fir_contact.keys():
         and chinese_name = "{3}"
     '''.format(fir_contact[k],source,k,brand))
     final_df.createOrReplaceTempView('final_df')
-	hc.sql('insert overwrite table marketing_modeling.dw_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))
+    hc.sql('insert overwrite table marketing_modeling.dw_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))

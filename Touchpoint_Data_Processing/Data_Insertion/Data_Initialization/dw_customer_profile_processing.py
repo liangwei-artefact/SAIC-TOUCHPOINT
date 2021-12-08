@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# 我本人是有问题的
 import numpy as np
 import datetime
 import sys
@@ -34,14 +35,30 @@ fir_contact_brand_df = fir_contact_brand.alias('df').filter('chinese_name = "MG"
 .withColumn("row_number", F.row_number().over(Window.partitionBy("mobile").orderBy(col("create_time").desc()))).filter("row_number = 1")
 
 # fetch leads_pool to get area and city
-leads_pool = hc.sql('''
-SELECT
-    id, area, city_name
-FROM
-(SELECT id, dealerid FROM dtwarehouse.ods_leadspool_t_leads WHERE pt = {0}) a
-LEFT JOIN (SELECT dlm_org_id, area, city_name FROM dtwarehouse.ods_rdp_v_sales_region_dealer WHERE pt = {0}) b
-ON a.dealerid = b.dlm_org_id
-'''.format(pt))
+# leads_pool = hc.sql('''
+# SELECT
+#     id, area, city_name
+# FROM
+# (SELECT id, dealerid FROM dtwarehouse.ods_leadspool_t_leads WHERE pt = {0}) a
+# LEFT JOIN (SELECT dlm_org_id, area, city_name FROM dtwarehouse.ods_rdp_v_sales_region_dealer WHERE pt = {0}) b
+# ON a.dealerid = b.dlm_org_id
+# '''.format(pt))
+
+
+leads_pool = hc.sql("""
+select
+phone mobile,
+to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') create_time,
+detail['firstresourcename'] firstresourcename,
+detail['dealer_id'] id,
+detail['secondresourcename'] secondresourcename,
+detail['businesstypecode'] businesstypecode
+from cdp.cdm_cdp_customer_behavior_detail
+	WHERE 
+		TYPE = 'leads_pool' 
+		AND pt >= {0} 
+		AND phone regexp '^[1][3-9][0-9]{9}$'
+""".format(pt))
 
 fir_contact_brand_df = fir_contact_brand_df.alias('df').join(leads_pool.alias('df1'),col('df.leads_id') == col('df1.id'), how='left')
 
@@ -189,5 +206,5 @@ final_df = user_pool_df.select('mobile','last_fir_contact_date_brand','fir_conta
                                'deliver_series_area').withColumn('pt', F.lit(pt))
 
 final_df.createOrReplaceTempView('final_df')
-hc.sql('insert overwrite table marketing_modeling.dw_customer_touchpoints_profile_a PARTITION (pt) select * from final_df')
+hc.sql('insert overwrite table marketing_modeling.cdm_customer_touchpoints_profile_a PARTITION (pt) select * from final_df')
 

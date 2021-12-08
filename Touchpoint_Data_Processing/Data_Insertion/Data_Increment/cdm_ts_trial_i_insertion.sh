@@ -6,7 +6,7 @@
 #*开发人: Junhai Ma
 #*开发日期: 2021-06-04
 #*修改记录: 
-#*          
+#*     sh cdm_ts_trial_i_insertion.sh 0 0 20211202
 #*********************************************************************/
 
 pt=$3
@@ -41,25 +41,17 @@ SELECT * FROM
 	  WHEN brand_id = 101 THEN 'RW'
 	END AS brand
 FROM (
-    SELECT 
-        customer_id,
-        status,
-        create_time AS action_time,
-		trial_type
-    -- FROM dtwarehouse.ods_dlm_t_trial_receive
-	FROM dtwarehouse.ods_dlm_t_trial_receive_tmp
-	WHERE pt = ${pt}
-	AND regexp_replace(to_date(create_time), '-', '') >= '${pt}'
-) a
-LEFT JOIN (
-    SELECT 
-        id, mobile, brand_id
-    FROM
-    (SELECT id, mobile, dealer_id FROM dtwarehouse.ods_dlm_t_cust_base WHERE pt = ${pt}) a
-    LEFT JOIN (SELECT dlm_org_id, brand_id FROM dtwarehouse.ods_rdp_v_sales_region_dealer WHERE pt = ${pt}) b
-    ON a.dealer_id = b.dlm_org_id
-) b
-ON a.customer_id = b.id
-WHERE status IN ('14021001','14021005','14021006','14021007')
-AND b.mobile regexp '^[1][3-9][0-9]{9}$'
+        select
+        phone mobile,
+        to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') action_time,
+        detail['status'] status,
+        detail['trial_type'] trial_type,
+        detail['brand_id'] brand_id
+        from cdp.cdm_cdp_customer_behavior_detail where type='trial_tp_new'
+        and pt = ${pt}
+        AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= '${pt}'
+        and detail['status'] IN ('14021001','14021005','14021006','14021007')
+        and  phone regexp '^[1][3-9][0-9]{9}$'
+    ) a
+) trial_tp_new
 "

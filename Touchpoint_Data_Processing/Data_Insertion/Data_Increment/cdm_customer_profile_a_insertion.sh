@@ -8,4 +8,4 @@ spark-submit --master yarn  \
 --executor-memory 32G \
 --conf "spark.excutor.memoryOverhead=10G"  \
 --queue $queue_name \
-dw_customer_profile_processing.py $pt
+cdm_customer_profile_processing.py $pt

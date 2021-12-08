@@ -5,7 +5,11 @@ set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
-INSERT OVERWRITE TABLE marketing_modeling.dw_ts_dlm_call_i PARTITION(pt,brand)
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false; 
+
+INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_dlm_call_i PARTITION(pt,brand)
 SELECT * FROM
 (
 	SELECT phone AS mobile,
@@ -91,20 +95,13 @@ SELECT * FROM
 			brand_id
 		FROM 
 			( 
-				SELECT phone, detail, pt 
+				SELECT phone, detail, pt,
+				detail['brand_id'] brand_id
 				FROM cdp.cdm_cdp_customer_behavior_detail
 				WHERE TYPE = 'dlm_call'
 					AND pt >= ${pt1}
 					AND pt <= ${pt2}
 			) a
-			LEFT JOIN
-			(
-				SELECT 
-					dlm_org_id, brand_id
-				FROM dtwarehouse.ods_rdp_v_sales_region_dealer
-				WHERE pt = ${pt2}
-			) b 
-			ON a.detail['dealer_id'] = b.dlm_org_id
 	) t
 ) t1
 WHERE  

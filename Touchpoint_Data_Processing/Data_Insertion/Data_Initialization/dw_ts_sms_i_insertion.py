@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from cProfile import run
 import sys
 import numpy as np
 import yaml
@@ -10,6 +11,21 @@ from pyspark.sql import SparkSession,HiveContext,Window
 from pyspark.sql.types import IntegerType, FloatType, DoubleType, ArrayType, StringType, DecimalType
 from pyspark.sql.functions import col, count, countDistinct, lit, to_timestamp
 import datetime
+
+
+spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_data_processing") \
+    .config("spark.driver.memory","30g") \
+    .config("spark.yarn.executor.memoryOverhead","20G") \
+    .config("spark.sql.broadcastTimeout", "3600")\
+    .config("spark.driver.maxResultSize", "6g")\
+    .config("hive.exec.dynamic.partition.mode", "nonstrict")\
+    .config("hive.exec.dynamic.partition", True)\
+            .config("spark.default.parallelism", 200) \
+    .getOrCreate()
+
+hc = HiveContext(spark_session.sparkContext)
+hc.setConf("hive.exec.dynamic.partition.mode","nonstrict")
+
 
 def sms_type_mapping(sms_name):
     sms_map = {
@@ -32,21 +48,8 @@ def sms_type_mapping(sms_name):
             return type_
         else:
             continue
-
-spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_data_processing")\
-        .config("spark.driver.memory","30g") \
-        .config("spark.yarn.executor.memoryOverhead","20G") \
-        .config("spark.sql.broadcastTimeout", "3600")\
-        .config("spark.driver.maxResultSize", "6g")\
-        .config("hive.exec.dynamic.partition.mode", "nonstrict")\
-        .config("hive.exec.dynamic.partition", True)\
-        .config("hive.exec.max.dynamic.partitions",2048)\
-        .config("hive.exec.max.dynamic.partitions.pernode",1000)\
-        .config("spark.default.parallelism", 200) \
-        .getOrCreate()
-        
-hc = HiveContext(spark_session.sparkContext)
-hc.udf.register("sms_type_mapping",sms_type_mapping,StringType())
+hc.udf.register("sms_type_mapping",sms_type_mapping)
+            
 
 # pt1 - 数据开始日期，pt2 - 数据结束日期
 pt1 = sys.argv[1]
@@ -82,8 +85,9 @@ SELECT
     sms_type,
     sms_name,
     action_time,
-    brand,
-    pt
+      pt,
+    brand
+  
 FROM
 (
     SELECT 
@@ -135,8 +139,9 @@ SELECT
     sms_type,
     sms_name,
     action_time,
-    brand,
-    pt
+     pt,
+    brand
+   
 FROM
 (
     SELECT 
@@ -190,14 +195,14 @@ SELECT
     sms_type,
     sms_name,
     action_time,
-    brand,
-    pt
+     pt,
+    brand
 FROM
 (
     select 
         mobile_phone as mobile,
-        attr4 as sms_name,
-        sms_type_mapping(attr4) as sms_type,
+        ma_message_new.attr4 as sms_name,
+        sms_type_mapping(ma_message_new.attr4) as sms_type,
         inserttime as action_time,
         case 
             when attr4 like '%荣威%' then 'RW'
@@ -209,33 +214,21 @@ FROM
     from 
     (
         select 
-            attr4, contact_identity_id, inserttime 
-        from dtwarehouse.ods_ma_doris_db_1_event
-        where 
-            pt = {1}
-            and ((event='sms_huawei__push_sms' and attr1='发送请求成功。') or (event='app_sms__app_saic_message' and attr1='成功'))
-            and regexp_replace(to_date(inserttime), '-', '') >= '{0}'
-            and regexp_replace(to_date(inserttime), '-', '') <= '{1}'
-            and attr4 not like '%test%'
-            and attr4 not like '%测试%'
-    ) a
-    LEFT JOIN
-    (
-        select 
-            id, mobile_phone 
-        from dtwarehouse.ods_ma_doris_db_1_contact_identity 
-        where 
-            pt = {1}
-            and regexp_replace(to_date(inserttime), '-', '') >= '{0}'
-            and regexp_replace(to_date(inserttime), '-', '') <= '{1}'
-        group by id, mobile_phone
-    ) b
-    on a.contact_identity_id = b.id 
-    where mobile_phone is not null
+        phone  mobile_phone,
+        detail['attr4'] attr4,
+       to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss') inserttime
+        from cdp.cdm_cdp_customer_behavior_detail cccbd where type='ma_message_new' 
+        and 
+         pt = {1}
+and regexp_replace(to_date(to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= {0}
+and regexp_replace(to_date(to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss')), '-', '') <= {1}
+        and detail['attr4'] not like '%test%'
+         and detail['attr4'] not like '%测试%'
+    )  ma_message_new
 ) a
 where brand is not null
 '''.format(pt1, pt2))
 
 final_df = sms_df_old_received.unionAll(sms_df_old_click).unionAll(sms_df_new_received)
 final_df.createOrReplaceTempView('final_df')
-hc.sql('insert overwrite table marketing_modeling.dw_ts_sms_i PARTITION (pt,brand) select * from final_df')
+hc.sql('insert overwrite table marketing_modeling.cdm_ts_sms_i PARTITION (pt,brand) select * from final_df')

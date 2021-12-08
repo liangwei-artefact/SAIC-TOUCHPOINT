@@ -6,7 +6,12 @@ SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
 SET mapreduce.map.memory.mb=4096;
 SET mapreduce.reduce.memory.mb=8192;
-INSERT OVERWRITE TABLE marketing_modeling.dw_ts_scrm_i PARTITION(pt,brand)
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false; 
+
+
+INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_scrm_i PARTITION(pt,brand)
 SELECT * FROM
 (
 	SELECT 
@@ -50,17 +55,29 @@ SELECT * FROM
 		SELECT 
 		mobile,TYPE,module,starttime,staff_brand
 		FROM
-		(
-			SELECT 
-				TYPE,module,starttime,openid,staff_brand
-			FROM dtwarehouse.ods_scrm_saic_statistics_interval
-			WHERE 
-				pt = ${pt2}
-				AND regexp_replace(to_date(starttime), '-', '') >= ${pt1}
-				AND regexp_replace(to_date(starttime), '-', '') <= ${pt2}
-		  ) a
-		LEFT JOIN(SELECT mobile,openid FROM linkflow.ods_scrmtools_saic_user WHERE pt = ${pt2}) b 
-		ON a.openid = b.openid
+-- 这里已经是产出替换
+--		(
+--			SELECT
+--				TYPE,module,starttime,openid,staff_brand
+--			FROM dtwarehouse.ods_scrm_saic_statistics_interval
+--			WHERE
+--				pt = ${pt2}
+--				AND regexp_replace(to_date(starttime), '-', '') >= ${pt1}
+--				AND regexp_replace(to_date(starttime), '-', '') <= ${pt2}
+--		  ) a
+--		LEFT JOIN(SELECT mobile,openid FROM linkflow.ods_scrmtools_saic_user WHERE pt = ${pt2}) b
+--		ON a.openid = b.openid
+    (
+      select
+      phone mobile,
+      detail['type'] TYPE,
+      detail['staff_brand'] staff_brand,
+      to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') starttime ,
+      detail['module'] module
+      from cdp.cdm_cdp_customer_behavior_detail
+      where pt between ${pt1} and ${pt2}
+      and type = 'SCRM'
+    ) SCRM
 		WHERE 
 			mobile regexp '^[1][3-9][0-9]{9}$'
 			AND TYPE IS NOT NULL

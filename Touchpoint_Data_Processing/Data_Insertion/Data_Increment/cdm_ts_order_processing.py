@@ -45,14 +45,17 @@ booking_df = hc.sql('''
         END AS brand
     FROM 
     (
-        SELECT * FROM  dtwarehouse.ods_saicmall_tb_business_order 
+        select
+        to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') order_date,
+        detail['order_type'] order_type,
+        detail['brand_id'] brand_id,
+        phone buyer_tel
+        from cdp.cdm_cdp_customer_behavior_detail
         WHERE pt = {0}
-        AND regexp_replace(to_date(order_date), '-', '') >= {0}
-    ) a   
-    LEFT JOIN (SELECT dealer_code, brand_id FROM dtwarehouse.ods_rdp_v_sales_region_dealer WHERE pt = {0}) b
-    ON a.dealer_code = b.dealer_code
-    WHERE brand_id in ('121','101')
-    AND order_type in (1,3)
+        AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= {0}
+        and type = 'small_blind_order'
+    ) a    
+    WHERE order_type in (1,3)
 '''.format(pt))
 
 # 大订/交车: 011000000000_tp	
@@ -82,5 +85,5 @@ final_df = final_df.filter((col('mobile').rlike("^[1][3-9][0-9]{9}$")) & \
 (col('action_time').isNotNull()) & (col('touchpoint_id').isNotNull()) & (col('brand').isNotNull()))
 
 final_df.createOrReplaceTempView('final_df')
-hc.sql('insert overwrite table marketing_modeling.dw_ts_order_i PARTITION (pt,brand) select * from final_df')
+hc.sql('insert overwrite table marketing_modeling.cdm_ts_order_i PARTITION (pt,brand) select * from final_df')
 

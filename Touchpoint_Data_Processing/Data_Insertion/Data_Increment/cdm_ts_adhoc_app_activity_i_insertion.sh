@@ -6,7 +6,7 @@
 #*开发人: Xiaofeng XU
 #*开发日期: 2021-07-04
 #*修改记录: 
-#*          
+#* !sh cdm_ts_adhoc_app_activity_i_insertion.sh 0 0 20211202 有问题
 #*********************************************************************/
 
 pt=$3
@@ -16,6 +16,9 @@ set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 set hive.exec.max.dynamic.partitions=2048;
 set hive.exec.max.dynamic.partitions.pernode=1000;
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
 
 insert overwrite table marketing_modeling.cdm_ts_adhoc_app_activity_i partition (pt, brand)
 select 
@@ -35,31 +38,17 @@ from
 		end as brand
     from
 	(
-		select * from dtwarehouse.ods_ccmpoint_points_record
-		where pt = '${pt}'
-		and regexp_replace(to_date(created_date), '-', '') >= ${pt}
-		and status = 'SUCCESS'
-		and action = 'INCREASE'
-	) a
-    join marketing_modeling.dw_adhoc_app_activity b
-    on a.description = b.activity_name
-    join
-    (
-    	select cellphone, uid
-    	from
-    	(
-    		select
-    		    cellphone, uid,
-    			Row_Number() OVER (partition by uid ORDER BY regist_date) rank_num
-    		from dtwarehouse.ods_ccm_member
-    		where pt = '${pt}'
-    		and cellphone is not NULL
-    		and uid is not NULL
-    	) c0
-    	where rank_num = 1
-    ) c
-    on a.uid = c.uid
-    group by cellphone, b.activity_name, b.activity_type,
+    select
+    phone cellphone,
+    to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as created_date,
+    detail['description'] activity_name,
+    detail['action'] activity_type,
+    detail['brand_code'] brand_code
+    from cdp.cdm_cdp_customer_behavior_detail cccbd where type='score'
+    and  pt = '${pt}'
+    and regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= ${pt}
+  ) r
+  group by cellphone, r.activity_name, r.activity_type,
 		case
 		   when brand_code = 2 then 'MG'
 		   else NULL

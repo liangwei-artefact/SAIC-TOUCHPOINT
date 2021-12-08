@@ -192,11 +192,11 @@ SELECT
     pt,
     brand
 FROM
-(
+    ( 
     select 
         mobile_phone as mobile,
-        attr4 as sms_name,
-        sms_type_mapping(attr4) as sms_type,
+        ma_message_new.attr4 as sms_name,
+        sms_type_mapping(ma_message_new.attr4) as sms_type,
         inserttime as action_time,
         case 
             when attr4 like '%荣威%' then 'RW'
@@ -208,30 +208,20 @@ FROM
     from 
     (
         select 
-            attr4, contact_identity_id, inserttime 
-        from dtwarehouse.ods_ma_doris_db_1_event
-        where 
-            pt = {0}
-            and ((event='sms_huawei__push_sms' and attr1='发送请求成功。') or (event='app_sms__app_saic_message' and attr1='成功'))
-            and regexp_replace(to_date(inserttime), '-', '') >= '{0}'
-            and attr4 not like '%test%'
-            and attr4 not like '%测试%'
-    ) a
-    LEFT JOIN
-    (
-        select 
-            id, mobile_phone 
-        from dtwarehouse.ods_ma_doris_db_1_contact_identity 
-        where 
-            pt = {0}
-        group by id, mobile_phone
-    ) b
-    on a.contact_identity_id = b.id 
-    where mobile_phone is not null
+        phone  mobile_phone,
+        detail['attr4'] attr4,
+       to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss') inserttime
+        from cdp.cdm_cdp_customer_behavior_detail cccbd where type='ma_message_new' 
+        and 
+         pt = {0}
+and regexp_replace(to_date(to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= {0}
+        and detail['attr4'] not like '%test%'
+         and detail['attr4'] not like '%测试%'
+    )  ma_message_new
 ) a
 where brand is not null
 '''.format(pt))
 
 final_df = sms_df_old_received.unionAll(sms_df_old_click).unionAll(sms_df_new_received)
 final_df.createOrReplaceTempView('final_df')
-hc.sql('insert overwrite table marketing_modeling.dw_ts_sms_i PARTITION (pt,brand) select * from final_df')
+hc.sql('insert overwrite table marketing_modeling.cdm_ts_sms_i PARTITION (pt,brand) select * from final_df')

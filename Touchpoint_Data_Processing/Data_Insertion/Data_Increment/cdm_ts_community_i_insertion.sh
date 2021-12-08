@@ -1,23 +1,22 @@
 pt=$3
 hive --hivevar pt=$pt -e "
 set hive.exec.dynamic.partition.mode=nonstrict;
+set hive.exec.dynamici.partition=true;
 set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
 
-INSERT OVERWRITE TABLE marketing_modeling.dw_ts_community_i PARTITION (pt,brand)
+INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_community_i PARTITION (pt,brand)
 SELECT * FROM
 (		SELECT
 		phone AS mobile,
 		cast(detail['behavior_time'] AS timestamp) AS action_time,
 		CASE
 			when detail['action_type'] = '浏览' AND detail['brand_id'] = '101' then '002002003001_rw'
-		    when detail['action_type'] = '评论' AND detail['brand_id'] = '101' then '002002007000_rw'
-			when detail['action_type'] = '点赞' AND detail['brand_id'] = '101' then '002002008000_rw'
-			when detail['action_type'] = '转发' AND detail['brand_id'] = '101' then '002002009000_rw'
-			when detail['action_type'] = '收藏' AND detail['brand_id'] = '101' then '002002010000_rw'
-
 			when detail['action_type'] = '评论' AND detail['brand_id'] = '121' then '002004001000_tp'
 			when detail['action_type'] = '点赞' AND detail['brand_id'] = '121' then '002005001000_tp'
 			when detail['action_type'] = '转发' AND detail['brand_id'] = '121' then '002006001000_tp'
@@ -31,7 +30,7 @@ SELECT * FROM
 		ELSE NULL END AS brand
 	FROM cdp.cdm_cdp_customer_behavior_detail
 	WHERE
-	  pt >= '${pt}'
+		pt >= '${pt1}' AND pt <= '${pt2}'
 		AND type = 'informations'
 		AND phone IS NOT NULL
 		AND detail['action_type'] in ('浏览', '评论', '点赞', '转发', '收藏')
@@ -57,7 +56,6 @@ SELECT * FROM
 			'MG' AS brand,
 			pt
 		FROM dtwarehouse.cdm_growingio_activity_hma
-		WHERE
     where pt >= '${pt}'
 			AND pagevariable['pagetype_pvar'] = '资讯详情页'
 			AND applicationname = 'MGAPP'

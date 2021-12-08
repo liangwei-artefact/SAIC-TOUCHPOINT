@@ -6,7 +6,8 @@
 #*开发人: Xiaofeng XU
 #*开发日期: 2021-09-05
 #*修改记录: 
-#*          
+#*    sh cdm_ts_completed_oppor_fail_i_insertion.sh 0 0 20211202
+#*  表未知
 #*********************************************************************/
 pt=$3
 bt=$(date -d "1 days ago $pt" +%Y%m%d )
@@ -17,6 +18,9 @@ set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
 
 INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_completed_oppor_fail_i PARTITION (pt,brand)
 SELECT 

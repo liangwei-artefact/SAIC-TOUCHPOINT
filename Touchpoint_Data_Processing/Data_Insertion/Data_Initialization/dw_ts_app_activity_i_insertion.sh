@@ -7,7 +7,7 @@ set mapreduce.reduce.memory.mb=8192;
 set hive.exec.max.dynamic.partitions=2048;
 set hive.exec.max.dynamic.partitions.pernode=1000;
 
-insert overwrite table marketing_modeling.dw_ts_app_activity_i partition (pt,brand)
+insert overwrite table marketing_modeling.cdm_ts_app_activity_i partition (pt,brand)
 select * from
 (
     select

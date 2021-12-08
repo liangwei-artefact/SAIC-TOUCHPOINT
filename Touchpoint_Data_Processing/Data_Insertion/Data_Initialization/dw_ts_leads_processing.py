@@ -283,4 +283,4 @@ lead_df = hc.sql('''
 
 # SAVE RESULT
 lead_df.createOrReplaceTempView('lead_df')
-hc.sql('insert overwrite table marketing_modeling.dw_ts_leads_i PARTITION (pt,brand) select * from lead_df')
+hc.sql('insert overwrite table marketing_modeling.cdm_ts_leads_i PARTITION (pt,brand) select * from lead_df')

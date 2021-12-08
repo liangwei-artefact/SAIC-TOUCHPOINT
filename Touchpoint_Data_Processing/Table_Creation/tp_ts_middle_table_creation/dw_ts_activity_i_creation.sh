@@ -12,8 +12,8 @@
 #*********************************************************************/
 
 hive -e "
-DROP TABLE IF EXISTS marketing_modeling.dw_ts_activity_i;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.dw_ts_activity_i (
+DROP TABLE IF EXISTS marketing_modeling.cdm_ts_activity_i;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_ts_activity_i (
 mobile STRING COMMENT '电话号码',
 activity_name STRING COMMENT '活动名字',
 action_time TIMESTAMP COMMENT '行为发生时间',

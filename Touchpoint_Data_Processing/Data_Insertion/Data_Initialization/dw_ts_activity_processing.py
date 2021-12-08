@@ -138,7 +138,7 @@ final_df = final_df.select('mobile','activity_name','action_time','touchpoint_id
         & (col('brand').isNotNull()))
 		
 final_df.createOrReplaceTempView('final_df')
-hc.sql('insert overwrite table marketing_modeling.dw_ts_activity_i PARTITION (pt,brand) select * from final_df')
+hc.sql('insert overwrite table marketing_modeling.cdm_ts_activity_i PARTITION (pt,brand) select * from final_df')
 
 
 

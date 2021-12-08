@@ -1,12 +1,16 @@
 pt=$3
 hive --hivevar pt=$pt -e "
 set hive.exec.dynamic.partition.mode=nonstrict;
+set hive.exec.dynamici.partition=true;
 set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 set hive.exec.max.dynamic.partitions=2048;
 set hive.exec.max.dynamic.partitions.pernode=1000;
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
 
-insert overwrite table marketing_modeling.dw_ts_app_activity_i partition (pt,brand)
+insert overwrite table marketing_modeling.cdm_ts_app_activity_i partition (pt,brand)
 select * from
 (
     select

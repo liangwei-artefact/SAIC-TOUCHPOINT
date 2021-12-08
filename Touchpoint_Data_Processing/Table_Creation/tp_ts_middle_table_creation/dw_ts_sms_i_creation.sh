@@ -12,8 +12,8 @@
 #*********************************************************************/
 
 hive -e "
-DROP TABLE IF EXISTS marketing_modeling.dw_ts_sms_i;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.dw_ts_sms_i (
+DROP TABLE IF EXISTS marketing_modeling.cdm_ts_sms_i;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_ts_sms_i (
 mobile STRING COMMENT '电话号码',
 touchpoint_id STRING COMMENT '触点编号，每三位代表一级触点，四级共12位，XXX(001)XXX(001)XXX(001)XXX(001)，从1开始编码',
 sms_type STRING COMMENT '短信类型',

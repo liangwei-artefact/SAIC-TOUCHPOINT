@@ -25,43 +25,29 @@ from
 (
     select 
         cellphone as mobile,
-        b.activity_name,
-        b.activity_type,
-        min(a.created_date) as action_time,
-        '008002006005_tp' as touchpoint_id, -- APP其他活动参与
-		regexp_replace(to_date(a.created_date), '-', '') as pt,
+        r.activity_name,
+        r.activity_type,
+        min(r.created_date) as action_time,
+        '008002006005_tp' as touchpoint_id, 
+		regexp_replace(to_date(r.created_date), '-', '') as pt,
 		case 
 			when brand_code = 2 then 'MG'
 			else NULL
 		end as brand
     from 
-	(
-		select * from dtwarehouse.ods_ccmpoint_points_record 
-		where pt = '${pt2}'
-		and regexp_replace(to_date(created_date), '-', '') >= ${pt1}
-		and regexp_replace(to_date(created_date), '-', '') <= ${pt2}
-		and status = 'SUCCESS'
-		and action = 'INCREASE'
-	) a
-    join marketing_modeling.dw_adhoc_app_activity b
-    on a.description = b.activity_name
-    join 
-    (
-    	select cellphone, uid
-    	from 
-    	(
-    		select 
-    		    cellphone, uid, 
-    			Row_Number() OVER (partition by uid ORDER BY regist_date) rank_num 
-    		from dtwarehouse.ods_ccm_member
-    		where pt = '${pt2}' 
-    		and cellphone is not NULL
-    		and uid is not NULL
-    	) c0
-    	where rank_num = 1 
-    ) c
-    on a.uid = c.uid
-    group by cellphone, b.activity_name, b.activity_type,
+  (
+    select
+    phone cellphone,
+    to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as created_date,
+    detail['description'] activity_name,
+    detail['action'] activity_type,
+    detail['brand_code'] brand_code
+    from cdp.cdm_cdp_customer_behavior_detail cccbd where type='score'
+    and  pt = '${pt2}'
+    and regexp_replace(to_date(detail['behavior_time']), '-', '') >= ${pt1}
+    and regexp_replace(to_date(detail['behavior_time']), '-', '') <= ${pt2}
+  ) r
+  group by cellphone, r.activity_name, r.activity_type,
 		case
 		   when brand_code = 2 then 'MG'
 		   else NULL
@@ -71,4 +57,5 @@ where
 	mobile regexp '^[1][3-9][0-9]{9}$'
 	and action_time is not NULL
 	and touchpoint_id is not NULL
+group by cellphone,
 "

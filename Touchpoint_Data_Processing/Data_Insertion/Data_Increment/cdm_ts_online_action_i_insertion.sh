@@ -1,24 +1,27 @@
 #!/bin/bash
 #/*********************************************************************
-#*模块: /Touchpoint_Data_Processing/Data_Increment/
+#*模块: /Touchpoint_Data_Processing/Data_Initialization/
 #*程序: cdm_ts_online_action_i_insertion.sh
 #*功能: 基于dtwarehouse.cdm_growingio_action_hma加工的一方触点相关触点
 #*开发人: Junhai MA
 #*开发日期: 2021-06-05
-#*修改记录: 
-#*          
+#*修改记录:
+#*
 #*********************************************************************/
 
-pt=$3
-hive --hivevar pt=$pt -e "
+pt1=$3
+pt2=$4
+hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 -e "
 set hive.exec.dynamic.partition.mode=nonstrict;
 set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
 
 INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_online_action_i PARTITION(pt,brand)
-
 SELECT
 	mobile,
 	action_time,
@@ -33,12 +36,12 @@ FROM
         CASE
 		    WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'cardclick' THEN '002002003000_tp' -- 社区文章卡片点击
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'poster' THEN '002006003001_tp' -- 海报分享成功
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroom_poster' THEN '002006003002_tp' -- 展厅海报分享成功            
-			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND eventvariable['pitname_var'] = '领券' THEN '008002002004_tp' --直播详情页点击领券
-			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND eventvariable['pitname_var'] = '转发' THEN '008002002005_tp' -- 直播详情页点击评论
-			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND eventvariable['pitname_var'] = '点赞' THEN '008002002006_tp' -- 直播详情页点击点赞
-			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND eventvariable['pitname_var'] = '转发' THEN '008002002007_tp' -- 直播详情页点击转发
-			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND eventvariable['pitname_var'] = '评论' THEN '008002002008_tp' -- 直播详情页点击打赏			
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroom_poster' THEN '002006003002_tp' -- 展厅海报分享成功
+			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND pitname_var = '领券' THEN '008002002004_tp' --直播详情页点击领券
+			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND pitname_var = '转发' THEN '008002002005_tp' -- 直播详情页点击评论
+			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND pitname_var = '点赞' THEN '008002002006_tp' -- 直播详情页点击点赞
+			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND pitname_var = '转发' THEN '008002002007_tp' -- 直播详情页点击转发
+			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'livedetailsplitclick' AND pitname_var = '评论' THEN '008002002008_tp' -- 直播详情页点击打赏
 			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'osmessageclick' THEN '002008002002_tp' -- OS消息点击
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'mallPlatformPitClick' THEN '002009002001_tp' -- 商城平台点击
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'fittingmallPitClick' THEN '002009002002_tp' -- 配件商城点击
@@ -76,52 +79,52 @@ FROM
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'recommendActivity_entranceClick' THEN '008002003001_tp' -- 访问推荐注册活动
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'recommendActivityPage_shareClick' THEN '008002003002_tp' -- 分享推荐注册活动
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'recommendActivitySharePage_click' THEN '008002003003_tp' -- 填写推荐注册活动页信息
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'share_activity_gifthave' AND eventvariable['pitname_var'] = '邀请注册' THEN '008002004001_tp' -- 邀请注册
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'share_activity_gifthave' AND eventvariable['pitname_var'] = '邀请试驾' THEN '008002004002_tp' -- 邀请试驾
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'share_activity_gifthave' AND eventvariable['pitname_var'] = '邀请购车' THEN '008002004003_tp' -- 邀请购车
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'share_activity_gifthave' AND pitname_var = '邀请注册' THEN '008002004001_tp' -- 邀请注册
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'share_activity_gifthave' AND pitname_var = '邀请试驾' THEN '008002004002_tp' -- 邀请试驾
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'share_activity_gifthave' AND pitname_var = '邀请购车' THEN '008002004003_tp' -- 邀请购车
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'gameactivity_buttonclick' THEN '008002005001_tp' -- 游戏点击
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'ask_drawback' THEN '013002001000_tp' -- 申请退款
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'drawback_done' THEN '013002002000_tp' -- 退款成功
             WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'mailclick' THEN '002008002001_tp' -- 站内信消息点击
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='试乘试驾' THEN '003001003001_tp' -- 展厅首页 - 试乘试驾
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='虚拟体验' THEN '003001003002_tp' -- 展厅首页 - 虚拟体验
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='订购爱车' THEN '003001003003_tp' -- 展厅首页 - 订购爱车
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='客服' THEN '003001003004_tp' -- 展厅首页 - 客服
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='宣传图区' THEN '003001003005_tp' -- 展厅首页 - 宣传图区
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='优选网点-一键导航' THEN '003001003006_tp' -- 展厅首页 - 优选网点-一键导航
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='优选网点-预约试驾' THEN '003001003007_tp' -- 展厅首页 - 优选网点-预约试驾
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='优选网点-查看更多' THEN '003001003008_tp' -- 展厅首页 - 优选网点-查看更多
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='优选网点-电话' THEN '003001003009_tp' -- 展厅首页 - 优选网点-电话
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='金融服务' THEN '003001003010_tp' -- 展厅首页 - 金融服务
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='订购入口' THEN '003001003011_tp' -- 展厅首页 - 订购入口
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='最近活动' THEN '003001003012_tp' -- 展厅首页 - 最近活动
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='车型文字区' THEN '003001003013_tp' -- 展厅首页 - 车型文字区
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='车体图区' THEN '003001003014_tp' -- 展厅首页 - 车体图区
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='视频播放' THEN '003001003015_tp' -- 展厅首页 - 视频播放
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND eventvariable['pitname_var'] ='视频播放' THEN '003001003015_tp' -- 展厅首页 - 视频播放
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = '第三代MG6' THEN '003002002001_tp' -- 访问第三代MG6详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = '全新一代MG ZS' THEN '003002002002_tp' -- 访问全新一代MG ZS详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = 'MG eHS' THEN '003002002003_tp' -- 访问MG eHS详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = '第三代MG6 PHEV' THEN '003002002004_tp' -- 访问第三代MG6 PHEV详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = '纯电动MG EZS' THEN '003002002005_tp' -- 访问纯电动MG EZS详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = 'MG HS' THEN '003002002006_tp' -- 访问MG HS详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND eventvariable['motorcycletype_var'] = 'MG eHS' THEN '003002002007_tp' -- 访问MG eHS详情
-            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'minepitclick' AND eventvariable['pitname_var'] = '帖子' THEN '002002004000_tp' -- 帖子浏览            
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='试乘试驾' THEN '003001003001_tp' -- 展厅首页 - 试乘试驾
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='虚拟体验' THEN '003001003002_tp' -- 展厅首页 - 虚拟体验
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='订购爱车' THEN '003001003003_tp' -- 展厅首页 - 订购爱车
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='客服' THEN '003001003004_tp' -- 展厅首页 - 客服
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='宣传图区' THEN '003001003005_tp' -- 展厅首页 - 宣传图区
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='优选网点-一键导航' THEN '003001003006_tp' -- 展厅首页 - 优选网点-一键导航
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='优选网点-预约试驾' THEN '003001003007_tp' -- 展厅首页 - 优选网点-预约试驾
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='优选网点-查看更多' THEN '003001003008_tp' -- 展厅首页 - 优选网点-查看更多
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='优选网点-电话' THEN '003001003009_tp' -- 展厅首页 - 优选网点-电话
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='金融服务' THEN '003001003010_tp' -- 展厅首页 - 金融服务
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='订购入口' THEN '003001003011_tp' -- 展厅首页 - 订购入口
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='最近活动' THEN '003001003012_tp' -- 展厅首页 - 最近活动
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='车型文字区' THEN '003001003013_tp' -- 展厅首页 - 车型文字区
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='车体图区' THEN '003001003014_tp' -- 展厅首页 - 车体图区
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='视频播放' THEN '003001003015_tp' -- 展厅首页 - 视频播放
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'showroompitclick' AND pitname_var ='视频播放' THEN '003001003015_tp' -- 展厅首页 - 视频播放
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = '第三代MG6' THEN '003002002001_tp' -- 访问第三代MG6详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = '全新一代MG ZS' THEN '003002002002_tp' -- 访问全新一代MG ZS详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = 'MG eHS' THEN '003002002003_tp' -- 访问MG eHS详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = '第三代MG6 PHEV' THEN '003002002004_tp' -- 访问第三代MG6 PHEV详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = '纯电动MG EZS' THEN '003002002005_tp' -- 访问纯电动MG EZS详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = 'MG HS' THEN '003002002006_tp' -- 访问MG HS详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'carfeatureclick' AND motorcycletype_var = 'MG eHS' THEN '003002002007_tp' -- 访问MG eHS详情
+            WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'minepitclick' AND pitname_var = '帖子' THEN '002002004000_tp' -- 帖子浏览
 			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'servicepitclick' THEN '016001001000_tp' -- 服务首页访问及点击
 			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'pick_upanddeliverServiceEntranceClick' THEN '016002001000_tp' -- 申请取送车（一般发生在维保）
 			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'second_handCarPageClick' THEN '016003001000_tp' -- 二手车服务访问
 			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'change_carPageSubmitClick' THEN '016003002000_tp' -- 二手车置换提交成功
-			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'find_dealerPageClick' THEN '016003003000_tp' -- 二手车经销商查询	 
+			WHEN (applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01') AND act_name = 'find_dealerPageClick' THEN '016003003000_tp' -- 二手车经销商查询
 			WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'poster' THEN '002003003001_rw' -- 海报分享成功
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'onShareAppMessage' THEN '002003003002_rw' -- 转发分享按钮点击
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'showroompitclick' THEN '003002001000_rw' -- 展厅首页核心按钮点击
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] IN ('预约试驾','试乘试驾') THEN '003002001001_rw' -- 预约试乘试驾
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] IN ('立即订购', '立即定购') THEN '003002001002_rw' -- 立即订购
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] IN ('立即预订', '立即预定' ,'立即预定6') THEN '003002001003_rw' -- 立即预订
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] IN ('盲订2', '盲定') THEN '003002001004_rw' -- 盲订
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] = '定制版订购' THEN '003002001005_rw' -- 定制版订购
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] IN ('九宫格抽奖','抽奖2') THEN '003002001007_rw' -- 抽奖
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar'] = '斗地主' THEN '003002001008_rw' -- 斗地主
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var IN ('预约试驾','试乘试驾') THEN '003002001001_rw' -- 预约试乘试驾
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var IN ('立即订购', '立即定购') THEN '003002001002_rw' -- 立即订购
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var IN ('立即预订', '立即预定' ,'立即预定6') THEN '003002001003_rw' -- 立即预订
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var IN ('盲订2', '盲定') THEN '003002001004_rw' -- 盲订
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var = '定制版订购' THEN '003002001005_rw' -- 定制版订购
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var IN ('九宫格抽奖','抽奖2') THEN '003002001007_rw' -- 抽奖
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var = '斗地主' THEN '003002001008_rw' -- 斗地主
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'vehicledetailmessage_pitclick' THEN '003002002001_rw' -- 车型详情页资讯点击
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'carfeatureswip' THEN '003002002002_rw' -- 展厅_车辆详情特点图片滑动
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'carpictureswip' THEN '003002002003_rw' -- 展厅_车型图片滑动
@@ -155,22 +158,22 @@ FROM
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'rw_wap_rx8_testdrive_submit' THEN '007001003023_rw' -- 上汽荣威_WAP_rx8车系页_预约试乘试驾提交
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'rw_wap_testdrive_submit' THEN '007001003024_rw' -- 上汽荣威_WAP_预约试乘试驾页_预约试乘试驾提交
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'homepage_moduleclick' THEN '002002001000_rw' -- 首页推荐点击
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='展厅' THEN '002002002001_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='我的' THEN '002002002002_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='威社区' THEN '002002002003_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='爱车' THEN '002002002004_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='无忧服务' THEN '002002002005_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='优品' THEN '002002002006_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='签到' THEN '002002002007_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='消息中心' THEN '002002002008_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='搜索' THEN '002002002009_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='车友圈' THEN '002002002010_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='服务' THEN '002002002011_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='车信' THEN '002002002012_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='探索' THEN '002002002013_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='推荐' THEN '002002002014_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='合伙人计划' THEN '002002002015_rw' -- APP
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND eventvariable['pitnamevar']='搜索框' THEN '002002002016_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='展厅' THEN '002002002001_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='我的' THEN '002002002002_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='威社区' THEN '002002002003_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='爱车' THEN '002002002004_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='无忧服务' THEN '002002002005_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='优品' THEN '002002002006_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='签到' THEN '002002002007_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='消息中心' THEN '002002002008_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='搜索' THEN '002002002009_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='车友圈' THEN '002002002010_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='服务' THEN '002002002011_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='车信' THEN '002002002012_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='探索' THEN '002002002013_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='推荐' THEN '002002002014_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='合伙人计划' THEN '002002002015_rw' -- APP
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND pitname_var='搜索框' THEN '002002002016_rw' -- APP
             WHEN applicationname IN ('RWAPP') AND act_name = 'playvideo' THEN '002002005000_rw' -- APP视频播放
             WHEN applicationname IN ('RWAPP') AND act_name = 'share' THEN '002002010000_rw' --APP分享/转发
             WHEN applicationname IN ('RWAPP') AND act_name = 'searchresultclick' THEN '002002011001_rw' --APP_搜索结果点击
@@ -221,9 +224,9 @@ FROM
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'pick_upanddeliverServiceEntranceClick' THEN '016001003000_rw' --申请取送车服务入口点击情况
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'washcarsearchresultclick' THEN '016001004000_rw' --洗车服务搜索结果点击
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'washcarsearch' THEN '016001005000_rw' --洗车服务完成搜索
-            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'shoppingindex' THEN '016001006000_rw' --服务首页优品商城轮播位点击    
+            WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'shoppingindex' THEN '016001006000_rw' --服务首页优品商城轮播位点击
             WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'cardclick' THEN '002002003002_rw' -- 社区文章卡片点击
-			WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'minepitclick' and eventvariable['pitname_var'] = '帖子' THEN '002002003003_rw' -- 帖子浏览
+			WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'minepitclick' and pitname_var = '帖子' THEN '002002003003_rw' -- 帖子浏览
 			WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'cc_view' THEN '002002003004_rw' -- 知识库内容阅读
 			WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'forumpageclick' THEN '002002004001_rw' -- 论坛列表页模块点击
 			WHEN (applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073') AND act_name = 'topicarticleclick' THEN '002002004002_rw' -- 资讯专题页文章点击
@@ -238,11 +241,20 @@ FROM
             WHEN applicationname IN ('MGAPP', 'MG官网') OR domain = 'wx4916ea5d69638c01' THEN 'MG'
             WHEN applicationname IN ('RWAPP', 'RW官网') OR domain = 'wx9425e8d1bc083073' THEN 'RW'
             ELSE NULL END AS brand,
-        pt
-    FROM dtwarehouse.cdm_growingio_action_hma
+        regexp_replace(to_date(ts), '-', '') as pt
+    from
+        ( select
+          to_utc_timestamp(cccbd.detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as ts,
+          cccbd.detail['act_name'] act_name,
+          cccbd.detail['applicationname'] applicationname,
+          cccbd.detail['motorcycletype_var'] motorcycletype_var,
+          cccbd.detail['pitname_var'] pitname_var,
+          cccbd.detail['domain'] domain,
+          phone register_login_phone_number
+          from  cdp.cdm_cdp_customer_behavior_detail cccbd where type='gio_action' and pt = '${pt}')  cccbd_trans
     WHERE
-        pt >= '${pt}'
-        AND register_login_phone_number regexp '^[1][3-9][0-9]{9}$'
+        regexp_replace(to_date(cccbd_trans.ts), '-', '') >= '${pt}'
+        AND cccbd_trans.register_login_phone_number regexp '^[1][3-9][0-9]{9}$'
 
     UNION ALL
 
@@ -260,8 +272,9 @@ FROM
             vehicle_brand AS brand,
             REGEXP_REPLACE(TO_DATE(create_date), '-', '') AS pt
         FROM linkflow.ods_dbuom_uom_order
-        WHERE pt = '${pt}'  -- 全量表取最新pt再切取
-            AND REGEXP_REPLACE(TO_DATE(create_date), '-', '') >= '${pt}'
+        WHERE pt = '${pt2}'  -- 全量表取最新pt再切取
+            AND REGEXP_REPLACE(TO_DATE(create_date), '-', '') >= '${pt1}'
+            AND REGEXP_REPLACE(TO_DATE(create_date), '-', '') <= '${pt2}'
 			AND vehicle_brand = 'MG'
     ) b0
     join
@@ -278,7 +291,7 @@ FROM
             FROM dtwarehouse.ods_ccm_member
             WHERE
                 -- pt = '20210531'
-                pt = '${pt}' -- 生产环境下用这一行
+                pt = '${pt2}' -- 生产环境下用这一行
         ) b0
         WHERE rank_num = 1
     ) b1
