@@ -247,6 +247,7 @@ final_df = fir_contact_series_brand\
                 'brand',
                 "regexp_replace(to_date(last_fir_contact_date_brand), '-', '') as pt")
 
+# 没有使用就去除
 final_df.createOrReplaceTempView('final_df')
 hc.sql('''
 INSERT OVERWRITE TABLE marketing_modeling.cdm_customer_touchpoints_profile_a PARTITION (pt)

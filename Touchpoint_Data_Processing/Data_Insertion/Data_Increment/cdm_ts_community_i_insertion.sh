@@ -37,45 +37,29 @@ SELECT * FROM
 
 	UNION ALL
 
-	SELECT
+  	SELECT
 		phone AS mobile,
 		action_time,
 		touchpoint_id,
 		pt,
 		brand
 	FROM
-	(
-		SELECT
-			loginuserid,
-			ts AS action_time,
+(
+  SELECT
+			detail['ts'] AS action_time,
 			CASE
-				when duration >= 0 AND duration < 5 then '002002002001_tp' -- 社区文章浏览[0,5)s
-				when duration >= 5 AND duration < 30 then '002002002002_tp' -- 社区文章浏览[5,30)s
-				when duration >= 30 then '002002002003_tp' -- 社区文章浏览>=30s
+				when detail['duration'] >= 0 AND detail['duration'] < 5 then '002002002001_tp' -- 社区文章浏览[0,5)s
+				when detail['duration'] >= 5 AND detail['duration'] < 30 then '002002002002_tp' -- 社区文章浏览[5,30)s
+				when detail['duration'] >= 30 then '002002002003_tp' -- 社区文章浏览>=30s
 			END AS touchpoint_id,
 			'MG' AS brand,
 			pt
-		FROM dtwarehouse.cdm_growingio_activity_hma
-    where pt >= '${pt}'
-			AND pagevariable['pagetype_pvar'] = '资讯详情页'
-			AND applicationname = 'MGAPP'
-	) a
-	JOIN
-	(
-		SELECT
-			cellphone AS phone, uid
 		FROM
-		(
-			SELECT
-				cellphone, uid,
-				Row_Number() OVER (partition by uid ORDER BY regist_date) rank_num
-			FROM dtwarehouse.ods_ccm_member
-		where pt = '${pt}'
-		) b0
-		WHERE rank_num = 1
-	) b
-	ON a.loginuserid = b.uid
-
+		    cdp.cdm_cdp_customer_behavior_detail
+    where pt >= '${pt}' and type='contactor'
+			AND detail['pagetype'] = '资讯详情页'
+			AND detail['applicationname'] = 'MGAPP'
+ ) p1
 	UNION ALL
 
 	SELECT

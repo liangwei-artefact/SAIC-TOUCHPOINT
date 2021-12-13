@@ -158,7 +158,7 @@ series_df = oppor.select('phone','series_id','behavior_time', 'area', 'city_name
 
 fir_contact_series_brand = fir_contact_brand_df.alias('df1').join(series_df.alias('df2'),
                                                                   [col('df1.mobile') == col('df2.phone')])\
-.filter('last_fir_contact_date_brand <= behavior_time')\
+.filter('last_fir_contact_date_brand <= behavior_time') \
 .withColumn("row_number", F.row_number().over(Window.partitionBy("mobile").orderBy(col("behavior_time").asc()))).filter("row_number = 1")\
 .selectExpr('mobile','series_id as fir_contact_series_brand')
 
@@ -166,8 +166,8 @@ fir_contact_series_area = fir_contact_area_df.alias('df1').join(series_df.alias(
                                                                 [col('df1.mobile') == col('df2.phone'),
                                                                  col('df1.fir_contact_province_area') == col('df2.area'),
                                                                  col('df1.fir_contact_city_area') == col('df2.city_name')]
-                                                               )\
-.filter('last_fir_contact_date_area <= behavior_time')\
+                                                               ) \
+.filter('last_fir_contact_date_area <= behavior_time') \
 .withColumn("row_number", F.row_number().over(Window.partitionBy("phone").orderBy(col("behavior_time").asc()))).filter("row_number = 1")\
 .selectExpr('mobile','series_id as fir_contact_series_area')
 

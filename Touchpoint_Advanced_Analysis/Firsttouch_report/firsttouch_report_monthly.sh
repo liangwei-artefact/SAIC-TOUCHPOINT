@@ -114,7 +114,7 @@ trial_df AS (
             brand,
             action_time,
             date_format(action_time, 'yyyyMM') AS action_month
-        FROM marketing_modeling.dw_ts_trial_i
+        FROM marketing_modeling.cdm_ts_trial_i
         WHERE
             pt >= '${cur_month_start}' AND pt <= '${cur_month_end}'
 			AND touchpoint_id IN ('007003000000_tp', '007004000000_tp', '007003000000_rw', '007004000000_rw')

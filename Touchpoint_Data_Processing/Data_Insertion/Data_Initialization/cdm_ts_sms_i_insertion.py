@@ -219,7 +219,7 @@ FROM
        to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss') inserttime
         from cdp.cdm_cdp_customer_behavior_detail cccbd where type='ma_message_new' 
         and 
-         pt = {1}
+         pt  between {0} and {1}
 and regexp_replace(to_date(to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= {0}
 and regexp_replace(to_date(to_utc_timestamp(detail['event_date'],'yyyy-MM-dd HH:mm:ss')), '-', '') <= {1}
         and detail['attr4'] not like '%test%'

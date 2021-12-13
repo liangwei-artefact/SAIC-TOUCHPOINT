@@ -9,5 +9,5 @@ spark-submit --master yarn  \
 --executor-memory 32G \
 --conf "spark.excutor.memoryOverhead=10G"  \
 --queue $queuename \
-dw_tp_data_integration.py $pt1 $pt2
+cdm_tp_data_integration.py $pt1 $pt2
 

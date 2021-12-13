@@ -34,49 +34,30 @@ SELECT * FROM
 		AND detail['action_type'] in ('浏览', '评论', '点赞', '转发', '收藏')
 
 	UNION ALL
-
-	SELECT 
-		phone AS mobile, 
+SELECT
+		phone AS mobile,
 		action_time,
 		touchpoint_id,
-		brand,
-		pt
+		pt,
+		brand
 	FROM
-	(
-		SELECT 
-			loginuserid, 
-			ts AS action_time,
-			CASE 
-				when duration >= 0 AND duration < 5 then '002002002001_tp' -- 社区文章浏览[0,5)s
-				when duration >= 5 AND duration < 30 then '002002002002_tp' -- 社区文章浏览[5,30)s
-				when duration >= 30 then '002002002003_tp' -- 社区文章浏览>=30s
+(
+  SELECT
+			detail['ts'] AS action_time,
+			CASE
+				when detail['duration'] >= 0 AND detail['duration'] < 5 then '002002002001_tp' -- 社区文章浏览[0,5)s
+				when detail['duration'] >= 5 AND detail['duration'] < 30 then '002002002002_tp' -- 社区文章浏览[5,30)s
+				when detail['duration'] >= 30 then '002002002003_tp' -- 社区文章浏览>=30s
 			END AS touchpoint_id,
 			'MG' AS brand,
 			pt
-		FROM dtwarehouse.cdm_growingio_activity_hma
-		WHERE 
-			pt >= '${pt1}' AND pt <= '${pt2}'
-			AND pagevariable['pagetype_pvar'] = '资讯详情页'
-			AND applicationname = 'MGAPP'
-	) a
-	JOIN
-	(
-		SELECT 
-			cellphone AS phone, uid
-		FROM 
-		(
-			SELECT 
-				cellphone, uid, 
-				Row_Number() OVER (partition by uid ORDER BY regist_date) rank_num 
-			FROM dtwarehouse.ods_ccm_member
-			WHERE pt = '${pt2}'
-		) b0
-		WHERE rank_num = 1 
-	) b
-	ON a.loginuserid = b.uid
-
+		FROM
+		    cdp.cdm_cdp_customer_behavior_detail
+    where pt between '${pt1}' and '${pt2}' and type='contactor'
+			AND detail['pagetype'] = '资讯详情页'
+			AND detail['applicationname'] = 'MGAPP'
+ ) p1
 	UNION ALL
-
 	SELECT 
 		cellphone AS mobile, action_time, touchpoint_id, brand, pt
 	FROM 

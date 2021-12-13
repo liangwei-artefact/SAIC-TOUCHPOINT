@@ -251,7 +251,7 @@ FROM
           cccbd.detail['pitname_var'] pitname_var,
           cccbd.detail['domain'] domain,
           phone register_login_phone_number
-          from  cdp.cdm_cdp_customer_behavior_detail cccbd where type='gio_action' )  cccbd_trans
+          from  cdp.cdm_cdp_customer_behavior_detail cccbd where type='gio_action' and pt between '${pt1}' and '${pt2}')  cccbd_trans
     WHERE 
         regexp_replace(to_date(cccbd_trans.ts), '-', '') >= '${pt1}' AND regexp_replace(to_date(cccbd_trans.ts), '-', '') <= '${pt2}'
         AND cccbd_trans.register_login_phone_number regexp '^[1][3-9][0-9]{9}$'

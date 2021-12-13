@@ -45,4 +45,4 @@ spark-submit --master yarn  \
 --executor-memory 32G \
 --conf "spark.excutor.memoryOverhead=10G"  \
 --queue $queuename \
-dw_ts_activity_processing.py
+cdm_ts_activity_processing.py

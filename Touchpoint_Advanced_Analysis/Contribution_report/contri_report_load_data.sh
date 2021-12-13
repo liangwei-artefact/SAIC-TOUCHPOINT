@@ -71,7 +71,7 @@ select
     mobile,
     action_time,
     touchpoint_id as tp_id
-from marketing_modeling.dw_mg_tp_ts_all_i
+from marketing_modeling.cdm_mg_tp_ts_all_i
 where pt >= ${cur_month_start} and pt <= ${af_month_end} and brand = 'MG'
 " > MG_all_touchpoint_df.csv
 
@@ -82,7 +82,7 @@ select
     mobile,
     action_time,
     touchpoint_id as tp_id
-from marketing_modeling.dw_rw_tp_ts_all_i
+from marketing_modeling.cdm_rw_tp_ts_all_i
 where pt >= ${cur_month_start} and pt <= ${af_month_end} and brand = 'RW'
 " > RW_all_touchpoint_df.csv
 

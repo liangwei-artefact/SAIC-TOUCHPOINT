@@ -142,7 +142,7 @@ trial_df AS (
 				brand,
 				action_time,
                 pt
-			FROM marketing_modeling.dw_ts_trial_i
+			FROM marketing_modeling.cdm_ts_trial_i
 			WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
 			AND touchpoint_id IN ('007003000000_tp', '007004000000_tp', '007003000000_rw', '007004000000_rw')
 	    ) AS t

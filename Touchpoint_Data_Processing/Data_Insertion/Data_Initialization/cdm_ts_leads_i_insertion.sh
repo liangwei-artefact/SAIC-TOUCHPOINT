@@ -9,4 +9,4 @@ spark-submit --master yarn  \
 --executor-memory 32G \
 --conf "spark.excutor.memoryOverhead=10G"  \
 --queue $queuename \
-dw_ts_sms_i_insertion.py $pt1 $pt2
+cdm_ts_leads_processing.py $pt1 $pt2

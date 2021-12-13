@@ -50,7 +50,7 @@ SELECT * FROM
         detail['trial_type'] trial_type,
         detail['brand_id'] brand_id
         from cdp.cdm_cdp_customer_behavior_detail where type='trial_tp_new'
-        and pt = ${pt2}
+        and pt between '${pt1}' and '${pt2}'
         AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= '${pt1}'
         AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') <= '${pt2}'
         and detail['status'] IN ('14021001','14021005','14021006','14021007')
