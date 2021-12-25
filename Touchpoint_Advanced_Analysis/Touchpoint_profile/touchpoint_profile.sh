@@ -7,15 +7,15 @@
 #*修改记录:  
 #*    
 #*********************************************************************/
-
+cd $(dirname $(readlink -f $0))
 pt=$3
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
-
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
+echo "queuename"_${queuename}
 spark-submit --master yarn  \
 --driver-memory 5G  \
---num-executors 10 \
---executor-cores 10 \
---executor-memory 32G \
+--num-executors 8 \
+--executor-cores 8 \
+--executor-memory 20G \
 --conf "spark.excutor.memoryOverhead=10G"  \
 --queue $queuename \
 touchpoint_profile.py $pt

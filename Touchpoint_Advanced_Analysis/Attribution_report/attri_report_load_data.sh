@@ -1,3 +1,4 @@
+#!/bin/bash
 #/*********************************************************************
 #*模块: /Touchpoint_Advanced_Analysis/Attribution_Report
 #*程序: attri_report_load_data.sh
@@ -14,8 +15,8 @@ cur_month_start=$(date -d "${pt_month}01" +%Y%m%d)
 cur_month_end=$(date -d "${cur_month_start} +1 month -1 day" +%Y%m%d)
 bf_month_start=$(date -d "${cur_month_start} -6 month" +%Y%m%d)
 bf_month_end=$(date -d "${cur_month_end} -1 month -1 day" +%Y%m%d)
-
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
+cd $(dirname $(readlink -f $0))
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
 echo "pt:" $pt
 echo "pt_month:" $pt_month

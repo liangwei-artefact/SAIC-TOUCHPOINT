@@ -4,7 +4,7 @@
 from cProfile import run
 import sys
 import numpy as np
-import yaml
+
 from pyspark.sql import functions as F
 from pyspark import SparkContext
 from pyspark.sql import SparkSession,HiveContext,Window
@@ -21,6 +21,7 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_da
     .config("hive.exec.dynamic.partition.mode", "nonstrict")\
     .config("hive.exec.dynamic.partition", True)\
             .config("spark.default.parallelism", 200) \
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
     .getOrCreate()
 
 hc = HiveContext(spark_session.sparkContext)

@@ -3,7 +3,7 @@
 #*模块: /Touchpoint_Advanced_Analysis/Firsttouch_report
 #*程序: firsttouch_report_weekly.sh
 #*功能: Weekly首触线索转化报表
-#*开发人: Boyan XU
+#*开发人: Boyan XU00
 #*开发日期: 2021-08-05
 #*修改记录: 
 #*          
@@ -13,8 +13,8 @@ pt=$3
 pt_week=$(date -d "-0 day ${pt}" +'CY%YW%U')
 cur_week_start=$(date -d "${pt} -$(date -d "${pt}" +%u) days +1 day" +%Y%m%d)
 cur_week_end=$(date -d "${pt} -$(date -d "${pt}" +%u) days +7 day" +%Y%m%d)
-
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
+cd $(dirname $(readlink -f $0))
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
 hive -hivevar queuename=queuename --hivevar pt=$pt --hivevar pt_week=$pt_week --hivevar cur_week_start=$cur_week_start --hivevar cur_week_end=$cur_week_end -e "
 set tez.queue.name=${queuename};
@@ -92,16 +92,18 @@ instore_df AS (
         FROM 
 		(
 			SELECT
-				phone AS mobile,
-				CASE
-					WHEN brand_id = '121' THEN 'MG'
-					WHEN brand_id = '101' THEN 'RW'
-					ELSE ''
-				END AS brand,
-				behavior_time AS action_time,
-                pt
-			FROM marketing_modeling.dw_instore_behavior
-			WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+            phone AS mobile,
+            CASE
+                WHEN detail['brand_id'] = '121' THEN 'MG'
+                WHEN detail['brand_id'] = '101' THEN 'RW'
+                ELSE ''
+            END AS brand,
+            cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+            date_format(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss'), 'yyyyMM') AS action_month，
+            pt
+        from cdp.cdm_cdp_customer_behavior_detail
+        WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+        and type='instore'
         ) AS t
         LEFT JOIN calendar_df 
 		ON t.pt = calendar_df.full_date
@@ -213,14 +215,15 @@ consume_behavior AS (
     SELECT
         phone AS mobile,
         CASE
-            WHEN brand_id = '121' THEN 'MG'
-            WHEN brand_id = '101' THEN 'RW'
+            WHEN detail['brand_id'] = '121' THEN 'MG'
+            WHEN detail['brand_id'] = '101' THEN 'RW'
             ELSE ''
         END AS brand,
-        behavior_time AS action_time,
-        series_id
-    FROM marketing_modeling.dw_consume_behavior
+       cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+        detail['series_id'] series_id
+    FROM cdp.cdm_cdp_customer_behavior_detail
     WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+    and type ='consume'
 
 ),
 
@@ -288,14 +291,15 @@ deliver_df AS (
 			SELECT
 				phone AS mobile,
 				CASE
-					WHEN brand_id = '121' THEN 'MG'
-					WHEN brand_id = '101' THEN 'RW'
+					WHEN detail['brand_id'] = '121' THEN 'MG'
+					WHEN detail['brand_id'] = '101' THEN 'RW'
 					ELSE ''
 				END AS brand,
-				behavior_time AS action_time,
-				series_id
-			FROM marketing_modeling.dw_deliver_behavior
+				cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+				detail['series_id'] series_id
+			FROM cdp.cdm_cdp_customer_behavior_detail
 			WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+			and type = 'deliver'
 		) AS t
         LEFT JOIN calendar_df
 		ON regexp_replace(to_date(t.action_time), '-', '') = calendar_df.full_date

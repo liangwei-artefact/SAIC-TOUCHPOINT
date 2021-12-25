@@ -1,3 +1,4 @@
+#!/bin/bash
 #/*********************************************************************
 #*模块: /Touchpoint_Advanced_Analysis/Contribution_Report
 #*程序: contri_report_aggregation.sh
@@ -9,8 +10,8 @@
 #*********************************************************************/
 
 brand=$1
-
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
+cd $(dirname $(readlink -f $0))
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
 hive -hivevar queuename=queuename --hivevar brand=$brand -e "
 set tez.queue.name=${queuename};

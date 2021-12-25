@@ -4,7 +4,6 @@
 from cProfile import run
 import sys
 import numpy as np
-import yaml
 from pyspark.sql import functions as F
 from pyspark import SparkContext
 from pyspark.sql import SparkSession,HiveContext,Window
@@ -21,6 +20,7 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_da
     .config("hive.exec.dynamic.partition.mode", "nonstrict")\
     .config("hive.exec.dynamic.partition", True)\
             .config("spark.default.parallelism", 200) \
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
     .getOrCreate()
 
 hc = HiveContext(spark_session.sparkContext)
@@ -66,14 +66,28 @@ booking_df = hc.sql('''
 
 # 大订/交车: 011000000000_tp	
 # 大订
+# consume_df = hc.sql("""
+#     SELECT * FROM marketing_modeling.dw_consume_behavior
+#     WHERE pt >= {0} AND pt <= {1}
+# """.format(pt1, pt2))
 consume_df = hc.sql("""
-    SELECT * FROM marketing_modeling.dw_consume_behavior
-    WHERE pt >= {0} AND pt <= {1}
+    SELECT 
+    phone,
+    detail['brand_id'] brand_id,
+    to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+    pt
+    FROM cdp.cdm_cdp_customer_behavior_detail 
+    WHERE pt >= {0} AND pt <= {1} and type = 'consume'
 """.format(pt1, pt2))
 # 交车
 deliver_df = hc.sql("""
-    SELECT * FROM marketing_modeling.dw_deliver_behavior
-    WHERE pt >= {0} AND pt <= {1}
+     SELECT 
+    phone,
+    detail['brand_id'] brand_id,
+    to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+    pt
+    FROM cdp.cdm_cdp_customer_behavior_detail 
+    WHERE pt >= {0} AND pt <= {1} and type = 'deliver'
 """.format(pt1,pt2))
 
 consume_df = consume_df.withColumn('brand', F.expr('case when brand_id = 121 then "MG" when brand_id = 101 then "RW" end'))\

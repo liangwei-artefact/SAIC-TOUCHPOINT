@@ -25,12 +25,15 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("Attribution_Mo
     .config("spark.driver.memory", "10g") \
     .config("spark.pyspark.driver.python", "/usr/bin/python2.7") \
     .config("spark.pyspark.python", "/usr/bin/python2.7") \
-    .config("spark.yarn.executor.memoryOverhead", "4G") \
-    .getOrCreate()
+    .config("spark.yarn.executor.memoryOverhead", "10G") \
+	.config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
+	.enableHiveSupport() \
+	.getOrCreate()
 
 hc = HiveContext(spark_session.sparkContext)
 hc.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
-
+hc.setConf("hive.exec.dynamici.partition","true")
+hc.setConf("hive.exec.orc.split.strategy","ETL")
 
 # ---【加载参数】---
 pt = sys.argv[1]
@@ -70,7 +73,7 @@ SELECT
 	mac_code,
     rfs_code,
     CASE 
-        WHEN dealer_level = 'A' THEN '0'
+        WHEN dealer_level = 'A' THEN '0' -- 是二网
         ELSE '1'
     END AS is_sec_net
 FROM dtwarehouse.cdm_dim_dealer_info
@@ -85,8 +88,8 @@ SELECT
 FROM dtwarehouse.ods_dlm_t_deliver_vel 
 WHERE 
 	deliver_vel_type = 2
-	AND pt = {0}
-GROUP BY mobile, brand_id
+	AND pt >= {0}
+GROUP BY get_vel_phone, brand_id
 '''.format(pt))
 
 
@@ -144,7 +147,7 @@ fir_contact_brand_offline_df = fir_contact_brand_offline_df.alias('df1').join(cu
 ## 3 - 线上首触
 fir_contact_brand_online_df = fir_contact_brand.alias('df').filter('businesstypecode != "10000000"')
 leads_pool = hc.sql('SELECT id, dealerid FROM dtwarehouse.ods_leadspool_t_leads WHERE pt = {0}'.format(pt))
-fir_contact_brand_online_df = fir_contact_brand_online_df.alias('df1').join(leads_pool.alias('df2'), col('df1.leads_id') == col('df2.ID'), how='left')\
+fir_contact_brand_online_df = fir_contact_brand_online_df.alias('df1').join(leads_pool.alias('df2'), col('df1.leads_id') == col('df2.id'), how='left')\
 .selectExpr('mobile',
 			'dealerid as dealer_id',
 			'last_fir_contact_date_brand',
@@ -185,40 +188,73 @@ else touchpoint_id end'''))
 
 
 # ---【加工首触车系】---
+# oppor = hc.sql('''
+#     SELECT
+#         phone AS mobile, behavior_time, series_id, brand_id
+#     FROM marketing_modeling.dw_oppor_behavior
+#     WHERE
+#         brand_id in (121, 101)
+# 		AND pt >= {0}
+# '''.format(this_month_start))
+
 oppor = hc.sql('''
     SELECT 
-        phone AS mobile, behavior_time, series_id, brand_id
-    FROM marketing_modeling.dw_oppor_behavior
+	phone AS mobile,
+	detail['brand_id'] brand_id,
+	detail['series_id'] series_id,
+	to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+	pt
+	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
-        brand_id in (121, 101)
+        detail['brand_id'] in (121, 101)
+        and type = 'deliver'
 		AND pt >= {0}
+		and phone is not null and trim(phone) !=''
 '''.format(this_month_start))
 
 trial = hc.sql('''
-    SELECT
-        phone AS mobile, behavior_time, series_id, brand_id
-    FROM marketing_modeling.dw_trial_behavior
+    SELECT 
+	phone AS mobile,
+	detail['brand_id'] brand_id,
+	detail['series_id'] series_id,
+	to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+	pt
+	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
-        brand_id in (121, 101)
+        detail['brand_id'] in (121, 101)
+        and type = 'trail'
 		AND pt >= {0}
+		and phone is not null and trim(phone) !=''
 '''.format(this_month_start))
 
 consume = hc.sql('''
-    SELECT  
-        phone AS mobile, behavior_time, series_id, brand_id
-    FROM marketing_modeling.dw_consume_behavior
+    SELECT 
+	phone AS mobile,
+	detail['brand_id'] brand_id,
+	detail['series_id'] series_id,
+	to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+	pt
+	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
-		brand_id in (121, 101)
+		detail['brand_id'] in (121, 101)
+		and type='consume'
 		AND pt >= {0}
+		and phone is not null and trim(phone) !=''
 '''.format(this_month_start))
 
 deliver = hc.sql('''
     SELECT 
-		phone AS mobile, behavior_time, series_id, brand_id 
-    FROM marketing_modeling.dw_deliver_behavior
+	phone AS mobile,
+	detail['brand_id'] brand_id,
+	detail['series_id'] series_id,
+	to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+	pt
+	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
-		brand_id in (121, 101)
+		detail['brand_id'] in (121, 101)
+		and type='deliver'
 		AND pt >= {0}
+		and phone is not null and trim(phone) !=''
 '''.format(this_month_start))
 
 series_df = oppor.unionAll(trial).unionAll(consume).unionAll(deliver)
@@ -245,13 +281,27 @@ final_df = fir_contact_series_brand\
                 'fir_contact_sec_sour_brand',
 				'series_id as fir_contact_series_brand',
                 'brand',
-                "regexp_replace(to_date(last_fir_contact_date_brand), '-', '') as pt")
+                'regexp_replace(to_date(last_fir_contact_date_brand), "-", "") as pt')
 
 # 没有使用就去除
 final_df.createOrReplaceTempView('final_df')
 hc.sql('''
 INSERT OVERWRITE TABLE marketing_modeling.cdm_customer_touchpoints_profile_a PARTITION (pt)
-SELECT * FROM final_df
+SELECT 
+cast(mobile as string) mobile,
+cast(last_fir_contact_date_brand as string) last_fir_contact_date_brand,
+cast(mac_code as string) mac_code,
+cast(rfs_code as string) rfs_code,
+cast(area as string) area,
+cast(is_sec_net as string) is_sec_net,
+cast(activity_name as string) activity_name,
+cast(touchpoint_id as string) touchpoint_id,
+cast(fir_contact_fir_sour_brand as string) fir_contact_fir_sour_brand,
+cast(fir_contact_sec_sour_brand as string) fir_contact_sec_sour_brand,
+cast(fir_contact_series_brand as string) fir_contact_series_brand,
+cast(brand as string) brand,
+cast(pt as String) pt
+FROM final_df where pt is not null
 ''')
 
 # ---【首触表去重】---
@@ -466,3 +516,7 @@ SELECT * FROM
 FROM dtwarehouse.cdm_dim_dealer_info) t
 GROUP BY rfs_code,mac_code,rfs_name,mac_name, brand
 ''')
+
+
+# 整理再拼一张时间维度表， select + union all
+

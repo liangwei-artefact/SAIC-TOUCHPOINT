@@ -75,7 +75,8 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_da
     .config("spark.driver.maxResultSize", "6g")\
     .config("hive.exec.dynamic.partition.mode", "nonstrict")\
     .config("hive.exec.dynamic.partition", True)\
-            .config("spark.default.parallelism", 200) \
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true")\
+    .config("spark.default.parallelism", 200)\
     .getOrCreate()
 
 hc = HiveContext(spark_session.sparkContext)
@@ -109,7 +110,7 @@ FROM
 ''')
 
 mg_tp_id = hc.sql('''
-SELECT touchpoint_id, touchpoint_name FROM marketing_modeling.dw_touchpoints_id_system
+SELECT touchpoint_id, touchpoint_name FROM marketing_modeling.cdm_touchpoints_id_system
 WHERE (touchpoint_id LIKE '008%000_tp' AND touchpoint_level = 3 AND touchpoint_id NOT IN ('008001009000_tp'))
 OR touchpoint_id = '012001000000_tp'
 OR touchpoint_id = '008003000000_tp'
@@ -118,7 +119,7 @@ OR (touchpoint_id LIKE '008001007%_tp' AND touchpoint_level = 4)
 ''')
 
 rw_tp_id = hc.sql('''
-SELECT touchpoint_id, touchpoint_name FROM marketing_modeling.dw_rw_touchpoints_id_system
+SELECT touchpoint_id, touchpoint_name FROM marketing_modeling.cdm_touchpoints_id_system
     WHERE (touchpoint_id LIKE '008%000_rw' AND touchpoint_level = 3 AND touchpoint_id NOT IN ('008001009000_rw'))
     OR touchpoint_id = '012001000000_rw'
     OR touchpoint_id = '008003000000_rw'

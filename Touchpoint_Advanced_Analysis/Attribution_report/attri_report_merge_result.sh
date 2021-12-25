@@ -1,3 +1,4 @@
+#!/bin/bash
 #/*********************************************************************
 #*模块: /Touchpoint_Advanced_Analysis/Attribution_Report
 #*程序: attri_report_merge_result.sh
@@ -12,8 +13,8 @@ pt=$1
 brand=$2
 pt_month=$(date -d "${pt}" +%Y%m)
 
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
-
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
+cd $(dirname $(readlink -f $0))
 hive -hivevar queuename=$queuename --hivevar pt_month=$pt_month --hivevar brand=$brand -e "
 set tez.queue.name=${queuename};
 set mapreduce.map.memory.mb=4096;

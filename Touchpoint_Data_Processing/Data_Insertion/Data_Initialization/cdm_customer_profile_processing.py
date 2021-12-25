@@ -18,6 +18,7 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_da
     .config("spark.driver.maxResultSize", "6g")\
     .config("hive.exec.dynamic.partition.mode", "nonstrict")\
     .config("hive.exec.dynamic.partition", True)\
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true")\
             .config("spark.default.parallelism", 200) \
     .getOrCreate()
 
@@ -25,6 +26,7 @@ import numpy as np
 import sys
 hc = HiveContext(spark_session.sparkContext)
 hc.setConf("hive.exec.dynamic.partition.mode","nonstrict")
+
 
 pt = sys.argv[1]
 
@@ -56,7 +58,7 @@ detail['businesstypecode'] businesstypecode
 from cdp.cdm_cdp_customer_behavior_detail
 	WHERE 
 		TYPE = 'leads_pool' 
-		AND pt >= {0} 
+		AND pt = {0} 
 		AND phone regexp '^[1][3-9][0-9]{9}$'
 """.format(pt))
 
@@ -77,7 +79,9 @@ fir_contact_area_df = fir_contact_area.alias('df').filter('chinese_name = "MG"')
 dealer_geo_df = hc.sql('SELECT DISTINCT dealer_code, area, city_name FROM dtwarehouse.ods_rdp_v_sales_region_dealer')
 
 # oppor series
+# oppor = hc.sql('SELECT * FROM marketing_modeling.dw_oppor_behavior').filter('brand_id = 121')
 oppor = hc.sql('SELECT * FROM marketing_modeling.dw_oppor_behavior').filter('brand_id = 121')
+
 
 oppor = oppor.alias('df').join(dealer_geo_df.alias('df1'),
                   col('df.dealer_code') == col('df1.dealer_code'), how='left')
@@ -116,6 +120,12 @@ trial_series_area = fir_contact_area_df.alias('df1').join(trial.alias('df2'),
 .groupby('mobile').agg(collect_set('series_id').alias('trial_series_area'))
 
 # [to be updated] consume series  brand
+consume = hc.sql('''
+    SELECT  mobile AS phone, create_time AS behavior_time, dealer_code, series_id 
+    FROM dtwarehouse.cdm_cust_sales
+    WHERE num=1 AND mobile IS NOT NULL
+''').filter('brand_id = 121')
+
 consume = hc.sql('''
     SELECT  mobile AS phone, create_time AS behavior_time, dealer_code, series_id 
     FROM dtwarehouse.cdm_cust_sales

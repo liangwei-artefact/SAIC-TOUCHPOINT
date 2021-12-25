@@ -2,7 +2,7 @@
 #/*********************************************************************
 #*模块: /Touchpoint_Advanced_Analysis/Firsttouch_report
 #*程序: firsttouch_report_monthly.sh
-#*功能: Monthly首触线索转化报表
+#*功能: 0
 #*开发人: Boyan XU
 #*开发日期: 2021-08-05
 #*修改记录:
@@ -13,14 +13,18 @@ pt=$3
 pt_month=$(date -d "${pt}" +%Y%m)
 cur_month_start=$(date -d "${pt_month}01" +%Y%m%d)
 cur_month_end=$(date -d "${cur_month_start} +1 month -1 day" +%Y%m%d)
-
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
+cd $(dirname $(readlink -f $0))
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
 hive -hivevar queuename=queuename --hivevar pt=$pt --hivevar pt_month=$pt_month --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end -e "
 set tez.queue.name=${queuename};
 set hive.exec.dynamic.partition.mode=nonstrict;
 set hive.groupby.position.alias=true;
 set mapreduce.map.memory.mb=4096;
+
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
+set hive.exec.dynamic.partition=true;
 
 WITH filtered_profile_df AS (
 
@@ -77,14 +81,15 @@ instore_df AS (
         SELECT
             phone AS mobile,
             CASE
-                WHEN brand_id = '121' THEN 'MG'
-                WHEN brand_id = '101' THEN 'RW'
+                WHEN detail['brand_id'] = '121' THEN 'MG'
+                WHEN detail['brand_id'] = '101' THEN 'RW'
                 ELSE ''
             END AS brand,
-            behavior_time AS action_time,
-            date_format(behavior_time, 'yyyyMM') AS action_month
-        FROM marketing_modeling.dw_instore_behavior
+            cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+            date_format(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss'), 'yyyyMM') AS action_month
+        from cdp.cdm_cdp_customer_behavior_detail
         WHERE pt >= '${cur_month_start}' AND pt <= '${cur_month_end}'
+        and type='instore'
     ) AS raw_instore_df
     LEFT JOIN filtered_profile_df
 	ON raw_instore_df.mobile = filtered_profile_df.mobile AND raw_instore_df.brand = filtered_profile_df.brand
@@ -184,15 +189,16 @@ consume_behavior AS (
     SELECT
         phone AS mobile,
         CASE
-            WHEN brand_id = '121' THEN 'MG'
-            WHEN brand_id = '101' THEN 'RW'
+            WHEN detail['brand_id'] = '121' THEN 'MG'
+            WHEN detail['brand_id'] = '101' THEN 'RW'
             ELSE ''
         END AS brand,
-        behavior_time AS action_time,
-        date_format(behavior_time, 'yyyyMM') AS action_month,
-        series_id
-    FROM marketing_modeling.dw_consume_behavior
+        CAST(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') AS string )AS action_time,
+        date_format(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss'), 'yyyyMM') AS action_month,
+        detail['series_id'] series_id
+    FROM cdp.cdm_cdp_customer_behavior_detail
     WHERE pt >= '${cur_month_start}' AND pt <= '${cur_month_end}'
+    and type = 'consume'
 
 ),
 
@@ -240,15 +246,16 @@ deliver_df AS (
         SELECT
             phone AS mobile,
             CASE
-                WHEN brand_id = '121' THEN 'MG'
-                WHEN brand_id = '101' THEN 'RW'
+                WHEN detail['brand_id'] = '121' THEN 'MG'
+                WHEN detail['brand_id'] = '101' THEN 'RW'
                 ELSE ''
             END AS brand,
-            behavior_time AS action_time,
-            date_format(behavior_time, 'yyyyMM') AS action_month,
-            series_id
-        FROM marketing_modeling.dw_deliver_behavior
+            cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+            date_format(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss'), 'yyyyMM') AS action_month,
+            detail['series_id'] series_id
+        FROM cdp.cdm_cdp_customer_behavior_detail
         WHERE pt >= '${cur_month_start}' AND pt <= '${cur_month_end}'
+        and type = 'deliver'
     ) AS raw_deliver_df
     LEFT JOIN filtered_profile_df
 	ON raw_deliver_df.mobile = filtered_profile_df.mobile AND raw_deliver_df.brand = filtered_profile_df.brand

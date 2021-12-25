@@ -24,15 +24,22 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_da
     .config("spark.sql.broadcastTimeout", "3600")\
     .config("spark.driver.maxResultSize", "6g")\
     .config("hive.exec.dynamic.partition.mode", "nonstrict")\
-    .config("hive.exec.dynamic.partition", True)\
-            .config("spark.default.parallelism", 200) \
+    .config("hive.exec.dynamic.partition", True) \
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
+    .config("spark.default.parallelism", 200) \
     .getOrCreate()
 
 hc = HiveContext(spark_session.sparkContext)
 hc.setConf("hive.exec.dynamic.partition.mode","nonstrict")
 
 # 定义需要从小竖表抽取哪个品牌的数据，取值为'MG'或'RW'
-brand = sys.argv[1]
+
+pt1 = sys.argv[1]
+pt2 = sys.argv[2]
+brand = sys.argv[3]
+print(pt1)
+print(pt2)
+print(brand)
 
 brand_suffix_mapping = {'MG':'tp','RW':'rw'}
 suffix = brand_suffix_mapping[brand]
@@ -68,16 +75,47 @@ df_col = ['cdm_ts_ccm_activity_i',
 for df in df_col:
     print('processing: ',df)
     source = '_'.join(df.split('_')[2:-1])
-    final_df = hc.sql('select mobile, action_time, touchpoint_id, brand, pt, "{0}" as source from marketing_modeling.{1} where pt >= "20190601" and brand = "{2}"'.format(source,df,brand))
+    final_df = hc.sql('select mobile, action_time, touchpoint_id, brand, pt, "{0}" as source from marketing_modeling.{1} where pt between "{2}" and "{3}" and brand = "{4}"'.format(source,df,pt1,pt2,brand))
     final_df.createOrReplaceTempView('final_df')
-    hc.sql('insert overwrite table marketing_modeling.dw_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))
+    hc.sql('insert overwrite table marketing_modeling.cdm_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))
+
+
+cdm_oppor_behavior = hc.sql('''
+select
+phone,
+to_utc_timestamp(detail['create_time'],'yyyy-MM-dd HH:mm:ss') behavior_time,
+detail['brand_id'] brand_id,pt
+from cdp.cdm_cdp_customer_behavior_detail
+where pt between '${0}' and '${1}' and type='oppor'
+'''.format(pt1,pt2))
+cdm_oppor_behavior.createOrReplaceTempView('cdm_oppor_behavior')
+
+cdm_cards_behavior = hc.sql('''
+select
+phone,
+to_utc_timestamp(detail['create_time'],'yyyy-MM-dd HH:mm:ss') behavior_time,
+detail['brand_id'] brand_id,pt
+from cdp.cdm_cdp_customer_behavior_detail
+where pt between '${0}' and '${1}' and type='construction_cards'
+'''.format(pt1,pt2))
+cdm_cards_behavior.createOrReplaceTempView('cdm_cards_behavior')
+
+cdm_instore_behavior = hc.sql('''
+select
+phone,
+to_utc_timestamp(detail['create_time'],'yyyy-MM-dd HH:mm:ss') behavior_time,
+detail['brand_id'] brand_id,pt
+from cdp.cdm_cdp_customer_behavior_detail
+where pt between '${0}' and '${1}' and type='instore'
+'''.format(pt1,pt2))
+cdm_instore_behavior.createOrReplaceTempView('cdm_instore_behavior')
 
 
 # 抽取CDP行为表
 beha_df = {
-    'dw_oppor_behavior':'004000000000_{0}'.format(suffix),
-    'dw_cards_behavior':'005000000000_{0}'.format(suffix),
-    'dw_instore_behavior ':'006000000000_{0}'.format(suffix)
+    'cdm_oppor_behavior':'004000000000_{0}'.format(suffix),
+    'cdm_cards_behavior':'005000000000_{0}'.format(suffix),
+    'cdm_instore_behavior':'006000000000_{0}'.format(suffix)
           }
 		  
 for k in beha_df.keys():
@@ -88,12 +126,11 @@ for k in beha_df.keys():
         select 
             phone as mobile, cast(behavior_time as timestamp) as action_time,
             "{0}" as touchpoint_id, "{1}" as brand, pt, "{2}" as source
-            from marketing_modeling.{3}
-            where pt >= "20190601"
-            and brand_id = {4}       
+            from {3}
+            where brand_id = {4}       
     '''.format(beha_df[k],brand,source,k,brand_id_mapping[brand]))
     final_df.createOrReplaceTempView('final_df')
-    hc.sql('insert overwrite table marketing_modeling.dw_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))
+    hc.sql('insert overwrite table marketing_modeling.cdm_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))
     
     
 # 抽取线索首触记录
@@ -110,8 +147,8 @@ for k in fir_contact.keys():
         "{0}" as touchpoint_id, chinese_name as brand,
         regexp_replace(to_date(create_time), '-', '') as pt,
         "{1}" as source from dtwarehouse.{2}
-        where regexp_replace(to_date(create_time), '-', '') >= "20190601" 
-        and chinese_name = "{3}"
-    '''.format(fir_contact[k],source,k,brand))
+        where regexp_replace(to_date(create_time), '-', '') between "{3}" and "{4}"
+        and chinese_name = "{5}"
+    '''.format(fir_contact[k],source,k,pt1,pt2,brand))
     final_df.createOrReplaceTempView('final_df')
-    hc.sql('insert overwrite table marketing_modeling.dw_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))
+    hc.sql('insert overwrite table marketing_modeling.cdm_{0}_tp_ts_all_i PARTITION (source,pt) select * from final_df'.format(brand.lower()))

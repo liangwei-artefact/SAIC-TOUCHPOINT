@@ -1,11 +1,22 @@
-pt1=$3
-pt2=$4
-
-hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 -e "set hive.exec.dynamic.partition.mode=nonstrict;
+#!/bin/bash
+pt2=$3
+pre_day=$4
+pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
+cd $(dirname $(readlink -f $0))
+echo $pt1""$pt2
+queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
+hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 --hivevar queue_name=${queue_name} -e "set hive.exec.dynamic.partition.mode=nonstrict;
+set tez.queue.name=${queue_name};
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
 INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_ai_call_i PARTITION(pt,brand)
-SELECT * FROM (
+SELECT
+mobile,
+action_time,
+touchpoint_id,
+cast(pt as string) pt,
+cast(brand as string) brand
+FROM (
     SELECT phone AS mobile,
        detail['call_time'] AS action_time,
        CASE
@@ -22,11 +33,11 @@ SELECT * FROM (
            WHEN detail['talk_length'] >= 60 and detail['oppor_brand'] = '101' THEN '002005003004_rw'
 		   WHEN detail['oppor_brand'] = '101' THEN '002005004000_rw'
        END AS touchpoint_id,
+       pt,
        CASE
            WHEN detail['oppor_brand'] = '121' THEN 'MG'
            WHEN detail['oppor_brand'] = '101' THEN 'RW'
-       END AS brand,
-       pt
+       END AS brand
     FROM cdp.cdm_cdp_customer_behavior_detail
     WHERE TYPE = 'ai_call'
     AND pt >= '${pt1}' AND pt <= '${pt2}'

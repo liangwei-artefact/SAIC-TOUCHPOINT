@@ -1,14 +1,28 @@
-pt1=$3
-pt2=$4
-hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 -e "
+#!/bin/bash
+pt2=$3
+pre_day=$4
+pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
+cd $(dirname $(readlink -f $0))
+queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
+hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 --hivevar queue_name=${queue_name} -e "
+set tez.queue.name=${queue_name};
 set hive.exec.dynamic.partition.mode=nonstrict;
 set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 set hive.exec.max.dynamic.partitions=2048;
 set hive.exec.max.dynamic.partitions.pernode=1000;
 
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
+
 insert overwrite table marketing_modeling.cdm_ts_app_activity_i partition (pt,brand)
-select * from
+select
+mobile,
+action_time,
+touchpoint_id,
+cast(pt as string) pt,
+cast(brand as string) brand
+from
 (
     select
         enter_user_phone as mobile, 
@@ -17,11 +31,11 @@ select * from
             when brand_code = 2 then '008002006001_tp'  -- 社交裂变类参与
             when brand_code = 1 then '008002002001_rw'
         else NULL end as touchpoint_id,
+        regexp_replace(to_date(create_date), '-', '') as pt,
         case
             when brand_code = 2 then 'MG'
             when brand_code = 1 then 'RW'
-        else NULL end as brand,
-        regexp_replace(to_date(create_date), '-', '') as pt
+        else NULL end as brand
     from 
     (
         select 
@@ -43,8 +57,8 @@ select * from
         mobile_phone as mobile,
         create_date as action_time,
         '008002006002_tp' as touchpoint_id, -- 发起答题活动
-        'MG' as brand,
-        regexp_replace(to_date(create_date), '-', '') as pt
+        regexp_replace(to_date(create_date), '-', '') as pt,
+        'MG' as brand
     from dtwarehouse.ods_db_supply_tb_help_ask
     where 
         pt = '${pt2}'
@@ -58,8 +72,8 @@ select * from
         mobile_phone as mobile,
         create_date as action_time,
         '008002006003_tp' as touchpoint_id, -- 参与答题活动
-        'MG' as brand,
-        regexp_replace(to_date(create_date), '-', '') as pt
+         regexp_replace(to_date(create_date), '-', '') as pt,
+        'MG' as brand
     from dtwarehouse.ods_db_supply_tb_help_reply
     where 
         pt = '${pt2}'
@@ -73,8 +87,8 @@ select * from
         cellphone as mobile,
         create_time as action_time,
         '008002006004_tp' as touchpoint_id, -- 社区活动类参与
-        'MG' as brand,
-        regexp_replace(to_date(create_time), '-', '') as pt
+        regexp_replace(to_date(create_time), '-', '') as pt,
+        'MG' as brand
     from 
     (
         select activity_id, user_id, create_time

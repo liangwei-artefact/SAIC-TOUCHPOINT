@@ -8,10 +8,10 @@
 #*修改记录:  
 #
 #*********************************************************************/
-
+cd $(dirname $(readlink -f $0))
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
-hive -e "
+hive --hivevar queuename=${queuename} -e "
 set tez.queue.name=${queuename};
 set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
@@ -30,17 +30,17 @@ CREATE TABLE IF NOT EXISTS marketing_modeling.cdm_touchpoints_id_system (
 row format delimited
 fields terminated by '|'
 STORED AS TEXTFILE
-LOCATION '/warehouse/tablespace/managed/hive/marketing_modeling.db/cdm/cdm_touchpoints_id_system'
+-- LOCATION '/warehouse/tablespace/managed/hive/marketing_modeling.db/cdm/cdm_touchpoints_id_system'
 "
 # 拷贝维表csv，生成临时csv
-cp cdm_touchpoints_id_system.csv cdm_touchpoints_id_system_tmp.csv
+#cp cdm_touchpoints_id_system.csv cdm_touchpoints_id_system_tmp.csv
 # 删除临时csv第一行
-sed -i '1d' cdm_touchpoints_id_system_tmp.csv
+#sed -i '1d' cdm_touchpoints_id_system_tmp.csv
 # 删除hdfs之前的维表
-hadoop fs -rm '/tmp/cdm_touchpoints_id_system_*.csv'
+hadoop fs -rm '/tmp/cdm_touchpoints_id_system.csv'
 # 将最新维表放入hdfs
-hadoop fs -put cdm_touchpoints_id_system_tmp.csv /tmp
+hadoop fs -put cdm_touchpoints_id_system.csv /tmp
 # 载入数据
-hive -e "load data inpath '/tmp/cdm_touchpoints_id_system_tmp.csv' overwrite into table marketing_modeling.cdm_touchpoints_id_system"
+hive -e "load data inpath '/tmp/cdm_touchpoints_id_system.csv' into table marketing_modeling.cdm_touchpoints_id_system"
 # 删除临时csv
-rm -rf cdm_touchpoints_id_system_tmp.csv
+#rm -rf cdm_touchpoints_id_system_tmp.csv

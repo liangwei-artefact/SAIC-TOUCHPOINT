@@ -12,8 +12,8 @@
 pt=$3
 pt_month=$(date -d "${pt}" +%Y%m)
 cur_month_start=$(date -d "${pt_month}01" +%Y%m%d)
-
-queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  ../../config/config.ini`
+cd $(dirname $(readlink -f $0))
+queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
 sh attri_report_load_data.sh $pt
 
@@ -22,8 +22,8 @@ echo "Start to generate attribution result......"
 touchpoints=('instore' 'trial' 'deal')
 for touchpoint in ${touchpoints[@]}
 do
-    python3 attri_report_model_running.py ${touchpoint} MG $cur_month_start
-    python3 attri_report_model_running.py ${touchpoint} RW $cur_month_start
+    /usr/bin/python3.6 attri_report_model_running.py ${touchpoint} MG $cur_month_start
+    /usr/bin/python3.6 attri_report_model_running.py ${touchpoint} RW $cur_month_start
     spark-submit --master yarn  \
     --driver-memory 10G  \
     --num-executors 10 \

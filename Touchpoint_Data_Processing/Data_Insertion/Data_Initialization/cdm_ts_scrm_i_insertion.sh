@@ -1,18 +1,30 @@
-pt1=$3
-pt2=$4
-hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 -e "
+#!/bin/bash
+pt2=$3
+pre_day=$4
+pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
+cd $(dirname $(readlink -f $0))
+queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
+hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 --hivevar queue_name=${queue_name} -e "
+set tez.queue.name=${queue_name};
+set hive.exec.dynamic.partition=true;
 SET hive.exec.dynamic.partition.mode=nonstrict;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
 SET mapreduce.map.memory.mb=4096;
 SET mapreduce.reduce.memory.mb=8192;
-set hive.execution.engine=mr;
+
 set hive.mapjoin.smalltable.filesize=55000000;
 set hive.auto.convert.join = false; 
 
 
 INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_scrm_i PARTITION(pt,brand)
-SELECT * FROM
+SELECT
+mobile,
+action_time,
+touchpoint_id,
+cast(pt as string) pt,
+cast(brand as string) brand
+FROM
 (
 	SELECT 
 		t.mobile AS mobile,
@@ -55,18 +67,6 @@ SELECT * FROM
 		SELECT 
 		mobile,TYPE,module,starttime,staff_brand
 		FROM
--- 这里已经是产出替换
---		(
---			SELECT
---				TYPE,module,starttime,openid,staff_brand
---			FROM dtwarehouse.ods_scrm_saic_statistics_interval
---			WHERE
---				pt = ${pt2}
---				AND regexp_replace(to_date(starttime), '-', '') >= ${pt1}
---				AND regexp_replace(to_date(starttime), '-', '') <= ${pt2}
---		  ) a
---		LEFT JOIN(SELECT mobile,openid FROM linkflow.ods_scrmtools_saic_user WHERE pt = ${pt2}) b
---		ON a.openid = b.openid
     (
       select
       phone mobile,
@@ -76,6 +76,8 @@ SELECT * FROM
       detail['module'] module
       from cdp.cdm_cdp_customer_behavior_detail
       where pt between ${pt1} and ${pt2}
+      AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= ${pt1}
+     AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') <= ${pt2}
       and type = 'SCRM'
     ) SCRM
 		WHERE 

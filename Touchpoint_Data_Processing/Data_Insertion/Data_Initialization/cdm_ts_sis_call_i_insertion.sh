@@ -1,12 +1,24 @@
-pt1=$3
-pt2=$4
-hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 -e "set hive.exec.dynamic.partition.mode=nonstrict;
+#!/bin/bash
+pt2=$3
+pre_day=$4
+pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
+cd $(dirname $(readlink -f $0))
+queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
+hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 --hivevar queue_name=${queue_name} -e "set hive.exec.dynamic.partition.mode=nonstrict;
+set tez.queue.name=${queue_name};
+set hive.exec.dynamic.partition=true;
 set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
 INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_sis_call_i PARTITION (pt,brand)
-SELECT * FROM
+SELECT
+mobile,
+action_time,
+touchpoint_id,
+cast(pt as string) pt,
+cast(brand as string) brand
+FROM
 (SELECT phone AS mobile,
        cast(from_unixtime(unix_timestamp(cast(detail['begin_time'] as string), 'yyyyMMddHHmmss')) as TIMESTAMP) as action_time,
        CASE

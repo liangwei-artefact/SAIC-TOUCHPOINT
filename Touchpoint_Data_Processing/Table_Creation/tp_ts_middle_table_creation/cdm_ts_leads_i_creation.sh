@@ -1,6 +1,6 @@
 #!/bin/bash
 #/*********************************************************************
-#*程序名  : dw_ts_sms_i_creation.sh
+#*程序名  : cdm_ts_leads_i_creation.sh
 #*功能    : 定义触点小宽表Schema
 #*开发人  : JUNHAI MA
 #*开发日期: 2021-05-26
@@ -12,13 +12,11 @@
 #*********************************************************************/
 
 hive -e "
-DROP TABLE IF EXISTS marketing_modeling.cdm_ts_sms_i;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_ts_sms_i (
+DROP TABLE IF EXISTS marketing_modeling.cdm_ts_leads_i;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_ts_leads_i (
 mobile STRING COMMENT '电话号码',
-touchpoint_id STRING COMMENT '触点编号，每三位代表一级触点，四级共12位，XXX(001)XXX(001)XXX(001)XXX(001)，从1开始编码',
-sms_type STRING COMMENT '短信类型',
-sms_name STRING COMMENT '短信名字',
-action_time TIMESTAMP COMMENT '行为发生时间'
+action_time TIMESTAMP COMMENT '行为发生时间',
+touchpoint_id STRING COMMENT '触点编号，每三位代表一级触点，四级共12位，XXX(001)XXX(001)XXX(001)XXX(001)，从1开始编码'
 )
 PARTITIONED BY (
   pt string COMMENT 'date used by partition, format: yyyymmdd',

@@ -1,11 +1,19 @@
-pt1=$3
-pt2=$4
+#!/bin/bash
+pt2=$3
+pre_day=$4
+pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
+
 pt1_date=$(date -d "-0 day $pt1 " +'%Y-%m-%d')
 pt2_date=$(date -d "-0 day $pt2 " +'%Y-%m-%d')
-queue_name=marketing_modeling
+cd $(dirname $(readlink -f $0))
+queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
+hive --hivevar pt1_date=$pt1_date --hivevar pt2_date=$pt2_date --hivevar queue_name=${queue_name} -e "
+set tez.queue.name=${queue_name};
+set hive.execution.engine=mr;
+set hive.mapjoin.smalltable.filesize=55000000;
+set hive.auto.convert.join = false;
 
-hive --hivevar pt1_date=$pt1_date --hivevar pt2_date=$pt2_date  -e "
 DROP TABLE IF EXISTS marketing_modeling.tmp_dw_ts_activity_i;
 CREATE table IF NOT EXISTS marketing_modeling.tmp_dw_ts_activity_i 
 AS
@@ -39,10 +47,10 @@ WHERE b.mobile IS NOT NULL AND a.attend_time IS NOT NULL
 "
 
 spark-submit --master yarn  \
+--queue $queue_name \
 --driver-memory 5G  \
 --num-executors 10 \
 --executor-cores 10 \
 --executor-memory 32G \
---conf "spark.excutor.memoryOverhead=10G"  \
---queue $queuename \
+--conf "spark.excutor.memoryOverhead=10G" \
 cdm_ts_activity_processing.py

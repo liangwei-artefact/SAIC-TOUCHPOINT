@@ -27,7 +27,8 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("Attriution_Mod
     .config("spark.pyspark.python","/usr/bin/python2.7") \
     .config("spark.yarn.executor.memoryOverhead","4G") \
     .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")\
-    .config("spark.kryoserializer.buffer.max", "128m")\
+    .config("spark.kryoserializer.buffer.max", "128m") \
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
     .getOrCreate()
 hc = HiveContext(spark_session.sparkContext)
 hc.setConf("hive.exec.dynamic.partition.mode","nonstrict")

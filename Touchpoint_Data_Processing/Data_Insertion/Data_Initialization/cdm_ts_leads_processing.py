@@ -13,6 +13,7 @@ from pyspark.sql.functions import col, count, countDistinct, lit, to_timestamp
 pt1 = sys.argv[1]
 pt2 = sys.argv[2]
 
+
 def mg_lead_source_id_mapping(lead_source):
     # MG的线索来源匹配逻辑字典
     lead_source_dic = {
@@ -233,7 +234,8 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("attribution_da
     .config("hive.exec.dynamic.partition", True)\
     .config("hive.exec.max.dynamic.partitions",2048)\
     .config("hive.exec.max.dynamic.partitions.pernode",1000)\
-    .config("spark.default.parallelism", 200)\
+    .config("spark.default.parallelism", 200) \
+    .config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
     .getOrCreate()
 hc = HiveContext(spark_session.sparkContext)
 hc.udf.register("mg_lead_source_id_mapping", mg_lead_source_id_mapping, StringType())
@@ -254,6 +256,8 @@ lead_df = hc.sql('''
             phone AS mobile,
             detail['behavior_time'] AS action_time,
             CASE 
+                when detail['brand_id'] = 121 AND detail['businesstypecode'] = '10000000' 
+                    then (case when detail['deale_id'] = '220000000398438' and detail['dealer_code'] = 'SQ666B' then '001003000000_tp' else '001002000000_tp' end)
                 WHEN detail['brand_id'] = 121 AND (detail['first_resource_name'] IS NULL OR length(detail['first_resource_name']) = 0) 
                 AND (detail['second_resource_name'] IS NULL OR length(detail['second_resource_name']) = 0) THEN '001010000000_tp'
                 WHEN detail['brand_id'] = 121 AND (detail['first_resource_name'] IN ('经销商网销主动开拓','展厅主动开拓'))
@@ -261,7 +265,6 @@ lead_df = hc.sql('''
                 WHEN detail['brand_id'] = 121 AND (detail['first_resource_name'] IS NULL OR length(detail['first_resource_name']) = 0)
                 AND (detail['second_resource_name'] = '厂方的网销其他平台') THEN '001004003008_tp'
                 WHEN detail['brand_id'] = 121 THEN mg_lead_source_id_mapping(CONCAT(CONCAT(detail['first_resource_name'],'_'), detail['second_resource_name']))
-
                 WHEN detail['brand_id'] = 101 THEN rw_lead_source_id_mapping(CONCAT(CONCAT(detail['first_resource_name'],'_'), detail['second_resource_name']))
             END AS touchpoint_id,
             CASE
@@ -271,7 +274,7 @@ lead_df = hc.sql('''
             pt
         FROM cdp.cdm_cdp_customer_behavior_detail
         WHERE 
-            TYPE ='leads'
+            TYPE ='leads_pool'
             AND pt >= {0} AND pt <= {1}
     ) t1
     WHERE

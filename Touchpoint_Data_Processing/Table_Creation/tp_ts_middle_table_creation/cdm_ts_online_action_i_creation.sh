@@ -1,6 +1,6 @@
 #!/bin/bash
 #/*********************************************************************
-#*程序名  : dw_ts_online_action_i_creation.sh
+#*程序名  : cdm_ts_online_action_i_creation.sh
 #*功能    : 定义触点小宽表Schema
 #*开发人  : JUNHAI MA
 #*开发日期: 2021-05-26

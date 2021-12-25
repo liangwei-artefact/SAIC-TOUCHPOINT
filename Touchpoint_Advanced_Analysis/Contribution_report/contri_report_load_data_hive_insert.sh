@@ -26,16 +26,22 @@ echo "af_month_end:" $af_month_end
 
 hive -hivevar queuename=$queuename -e "
 set tez.queue.name=${queuename};
-select 
-	mobile 
-from dtwarehouse.cdm_dim_dealer_employee_info 
-where mobile regexp '^[1][3-9][0-9]{9}$' 
+insert overwrite local directory 'mobile_to_remove.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+select
+	mobile
+from dtwarehouse.cdm_dim_dealer_employee_info
+where mobile regexp '^[1][3-9][0-9]{9}$'
 group by mobile
-" > mobile_to_remove.csv
+"
 
 
 hive -hivevar queuename=$queuename --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end --hivevar pt_month=${pt_month} -e "
 set tez.queue.name=${queuename};
+insert overwrite local directory 'MG_filtered_profile_df.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
 select
     mobile,
     fir_contact_month,
@@ -47,11 +53,14 @@ select
     fir_contact_tp_id
 from marketing_modeling.app_touchpoints_profile_monthly
 where pt = ${pt_month} and brand = 'MG'
-" > MG_filtered_profile_df.csv
+"
 
 
 hive -hivevar queuename=$queuename --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end --hivevar pt_month=${pt_month} -e "
 set tez.queue.name=${queuename};
+insert overwrite local directory 'RW_filtered_profile_df.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
 select
     mobile,
     fir_contact_month,
@@ -63,33 +72,42 @@ select
     fir_contact_tp_id
 from marketing_modeling.app_touchpoints_profile_monthly
 where pt = ${pt_month} and brand = 'RW'
-" > RW_filtered_profile_df.csv
+"
 
 
 hive -hivevar queuename=$queuename --hivevar cur_month_start=$cur_month_start --hivevar af_month_end=$af_month_end -e "
 set tez.queue.name=${queuename};
+insert overwrite local directory 'MG_all_touchpoint_df.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
 select
     mobile,
     action_time,
     touchpoint_id as tp_id
 from marketing_modeling.cdm_mg_tp_ts_all_i
 where pt >= ${cur_month_start} and pt <= ${af_month_end} and brand = 'MG'
-" > MG_all_touchpoint_df.csv
+"
 
 
 hive -hivevar queuename=$queuename --hivevar cur_month_start=$cur_month_start --hivevar af_month_end=$af_month_end -e "
 set tez.queue.name=${queuename};
+insert overwrite local directory 'RW_all_touchpoint_df.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
 select
     mobile,
     action_time,
     touchpoint_id as tp_id
 from marketing_modeling.cdm_rw_tp_ts_all_i
 where pt >= ${cur_month_start} and pt <= ${af_month_end} and brand = 'RW'
-" > RW_all_touchpoint_df.csv
+"
 
 
 hive -hivevar queuename=$queuename -e "
 set tez.queue.name=${queuename};
+insert overwrite local directory 'touchpoint_df.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
 select
     touchpoint_id as tp_id,
     level_1_tp_id,
@@ -97,4 +115,4 @@ select
     level_3_tp_id,
     level_4_tp_id
 from marketing_modeling.cdm_touchpoints_id_system
-" > touchpoint_df.csv
+"
