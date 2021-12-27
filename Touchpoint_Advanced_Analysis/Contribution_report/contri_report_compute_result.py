@@ -12,6 +12,8 @@
 #*********************************************************************/
 
 import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import pandas as pd
 import numpy as np
 import datetime
@@ -59,8 +61,7 @@ all_touchpoint_df['mobile'] = all_touchpoint_df['mobile'].astype('string').str.r
 ## 关联首触表和触点大竖表，获取首触用户的触点行为
 tp_profile_df = filtered_profile_df.merge(all_touchpoint_df, on='mobile', how='left')
 ## 只考虑其首触日算起6个月内的行为
-
-tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date']  &(tp_profile_df['fir_contact_date'].dt.normalize() <= tp_profile_df['action_time'].dt.normalize())]
+tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() <= tp_profile_df['action_time'].dt.normalize()]
 tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() + pd.DateOffset(months=6) >= tp_profile_df['action_time'].dt.normalize()]
 tp_profile_df['mobile'] = tp_profile_df['mobile'].astype('int64')
 
@@ -132,6 +133,8 @@ final_df['undeal_flag'] = final_df['undeal_flag'].fillna(0).astype('int64')
 final_df['exit_flag'] = final_df['exit_flag'].fillna(0).astype('int64')
 final_df['fir_contact_date'] = final_df['fir_contact_date'].astype('string')
 final_df['action_time'] = final_df['action_time'].astype('string')
+final_df['fir_contact_month']=final_df['fir_contact_month'].astype('string')
+final_df['fir_contact_series']=final_df['fir_contact_series'].astype('string')
 final_df = final_df.drop(columns=['last_order_time', 'action_month', 'rank_num'])
 
 ## 计算未成交人数
@@ -139,7 +142,6 @@ undeal_df = final_df[['mobile','fir_contact_month','fir_contact_tp_id','fir_cont
             .drop_duplicates()\
             .groupby(['fir_contact_month','fir_contact_tp_id','fir_contact_series','mac_code','rfs_code','area'])['undeal_flag'].count().reset_index()\
             .rename(columns={'undeal_flag':'undeal_vol'})
-
 
 
 # ---【存入 Hive】---

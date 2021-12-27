@@ -15,7 +15,7 @@ cur_month_start=$(date -d "${pt_month}01" +%Y%m%d)
 cd $(dirname $(readlink -f $0))
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
-sh attri_report_load_data.sh $pt
+sh attri_report_load_data_pyspark.sh $pt
 
 echo "Start to generate attribution result......"
 

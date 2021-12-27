@@ -10,7 +10,7 @@
 #*********************************************************************/
 
 pt=$3
-pt_week=$(date -d "-0 day ${pt}" +'CY%YW%U')
+pt_week=$(date -d "-0 day ${pt}" +'%YW%U')
 cur_week_start=$(date -d "${pt} -$(date -d "${pt}" +%u) days +1 day" +%Y%m%d)
 cur_week_end=$(date -d "${pt} -$(date -d "${pt}" +%u) days +7 day" +%Y%m%d)
 cd $(dirname $(readlink -f $0))

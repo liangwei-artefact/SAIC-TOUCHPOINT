@@ -21,12 +21,20 @@ from pyspark.sql import SparkSession, HiveContext, Window
 from pyspark.sql.types import IntegerType, FloatType, DoubleType, ArrayType, StringType, DecimalType
 from pyspark.sql.functions import col, count, countDistinct, lit, to_timestamp, collect_set, row_number, udf, when
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+
+
 spark_session = SparkSession.builder.enableHiveSupport().appName("Attribution_Model") \
     .config("spark.driver.memory", "10g") \
     .config("spark.pyspark.driver.python", "/usr/bin/python2.7") \
     .config("spark.pyspark.python", "/usr/bin/python2.7") \
     .config("spark.yarn.executor.memoryOverhead", "10G") \
 	.config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
+	.config("spark.sql.hive.convertMetastoreOrc","true")\
+	.config("spark.sql.hive.caseSensitiveInferenceMode","NEVER_INFER")\
 	.enableHiveSupport() \
 	.getOrCreate()
 
@@ -41,6 +49,10 @@ now = datetime.datetime.strptime(pt,"%Y%m%d")
 this_month_start = datetime.datetime(now.year, now.month, 1).strftime('%Y%m%d')
 this_month_end = datetime.datetime(now.year, now.month, calendar.monthrange(now.year, now.month)[1]).strftime('%Y%m%d')
 
+print pt #20211129
+print now
+print this_month_start #20211101
+print this_month_end #20211130
 
 # ---【提取数据】---
 ## 获取首触用户
@@ -130,7 +142,8 @@ fir_contact_deliver = fir_contact_brand.join(order_vhcl, ['leads_id','mobile','b
 			'activity_name',
 			'brand',
 			"'order_vhcl' AS mark")
-
+print fir_contact_deliver
+print fir_contact_deliver.show(5)
 ## 2 - 其他线下首触
 fir_contact_brand_offline_df = fir_contact_brand.alias('df').filter('businesstypecode = "10000000"').join(order_vhcl.selectExpr('leads_id'), ['leads_id'], 'leftanti')
 cust_pool = hc.sql('SELECT id, dealer_id FROM dtwarehouse.ods_dlm_t_cust_base WHERE pt = {0}'.format(pt))

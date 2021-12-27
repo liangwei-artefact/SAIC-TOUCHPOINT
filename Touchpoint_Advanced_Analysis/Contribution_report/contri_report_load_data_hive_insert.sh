@@ -3,9 +3,9 @@
 #*模块: /Touchpoint_Advanced_Analysis/Contribution_Report
 #*程序: contri_report_load_data.sh
 #*功能: 从hive中读取计算触点转化所需的数据并存储成csv
-#*开发人: Boyan
-#*开发日: 2021-09-05
-#*修改记录:
+#*开发人: Liangwei
+#*开发日: 2021-12-25
+#*修改记录: 废弃
 #*
 #*********************************************************************/
 

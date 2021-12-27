@@ -85,7 +85,7 @@ def preprocessing(df, rm_list, attribute_tp_ids, cur_month_start):
     # 去掉在当月之前6个月内发生过目标节点行为的用户
     rm_users = df[(df.touchpoint_id.isin(attribute_tp_ids)) & (df.action_time <= cur_month_start)]
     df = df[df.mobile.isin(rm_users) == False]
-    df.mobile = df.mobile.astype(int)
+    # df.mobile = df.mobile.astype(int)
 
     # 串联用户的触点行为旅程
     df = df.sort_values(['mobile', 'action_time'], ascending=[False, True])
