@@ -17,7 +17,7 @@ set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 
 DROP TABLE IF EXISTS marketing_modeling.cdm_adhoc_app_activity;
-CREATE TABLE IF NOT EXISTS marketing_modeling.cdm_adhoc_app_activity (
+CREATE  TABLE IF NOT EXISTS marketing_modeling.cdm_adhoc_app_activity (
     ccm_points_description string,
     activity_name string ,
     activity_type string
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS marketing_modeling.cdm_adhoc_app_activity (
 row format delimited
 fields terminated by ','
 STORED AS TEXTFILE
--- LOCATION '/warehouse/tablespace/managed/hive/marketing_modeling.db/cdm/cdm_lead_source_mapping'
+LOCATION '/user/hive/warehouse/marketing_modeling.db/cdm_adhoc_app_activity'
 "
 ## 拷贝维表csv，生成临时csv
 #cp cdm_adhoc_app_activity.csv cdm_adhoc_app_activity_tmp.csv

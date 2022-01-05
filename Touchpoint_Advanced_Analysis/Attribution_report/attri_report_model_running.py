@@ -143,7 +143,7 @@ def run_mk(df_paths):
         remove_effects['brand'] = brand
 
         # 将结果存储在本地
-        remove_effects.to_csv('{0}_mk_attribution_report.csv'.format(brand.lower()), encoding='utf-8', index=False)
+        remove_effects.to_csv('{0}_mk_attribution_report.csv'.format(brand.lower()), encoding='utf-8', index=False,mode='a')
         logger.info('[{0} - {1}] MK model result saved'.format(brand, sys.argv[1]))
         logger.info('[{0} - {1}] MK model terminated'.format(brand, sys.argv[1]))
 
@@ -187,7 +187,7 @@ def run_ml(df_paths, touchpoint_list):
         fi_importance['brand'] = brand
 
         # 将结果存储在本地
-        fi_importance.to_csv('{0}_ml_attribution_report.csv'.format(brand.lower()), encoding='utf-8', index=False)
+        fi_importance.to_csv('{0}_ml_attribution_report.csv'.format(brand.lower()), encoding='utf-8', index=False,mode='a')
         logger.info('[{0} - {1}] result saved'.format(brand, sys.argv[1]))
         logger.info('[{0} - {1}] ML model terminated'.format(brand, sys.argv[1]))
     except:

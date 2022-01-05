@@ -35,6 +35,7 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("Attribution_Mo
 	.config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
 	.config("spark.sql.hive.convertMetastoreOrc","true")\
 	.config("spark.sql.hive.caseSensitiveInferenceMode","NEVER_INFER")\
+	.config("spark.cleaner.referenceTracking.cleanCheckpoints", "true")\
 	.enableHiveSupport() \
 	.getOrCreate()
 
@@ -142,8 +143,8 @@ fir_contact_deliver = fir_contact_brand.join(order_vhcl, ['leads_id','mobile','b
 			'activity_name',
 			'brand',
 			"'order_vhcl' AS mark")
-print fir_contact_deliver
-print fir_contact_deliver.show(5)
+
+
 ## 2 - 其他线下首触
 fir_contact_brand_offline_df = fir_contact_brand.alias('df').filter('businesstypecode = "10000000"').join(order_vhcl.selectExpr('leads_id'), ['leads_id'], 'leftanti')
 cust_pool = hc.sql('SELECT id, dealer_id FROM dtwarehouse.ods_dlm_t_cust_base WHERE pt = {0}'.format(pt))
@@ -160,7 +161,7 @@ fir_contact_brand_offline_df = fir_contact_brand_offline_df.alias('df1').join(cu
 ## 3 - 线上首触
 fir_contact_brand_online_df = fir_contact_brand.alias('df').filter('businesstypecode != "10000000"')
 leads_pool = hc.sql('SELECT id, dealerid FROM dtwarehouse.ods_leadspool_t_leads WHERE pt = {0}'.format(pt))
-fir_contact_brand_online_df = fir_contact_brand_online_df.alias('df1').join(leads_pool.alias('df2'), col('df1.leads_id') == col('df2.id'), how='left')\
+fir_contact_brand_online_df = fir_contact_brand_online_df.alias('df1').join(leads_pool.alias('df2'), col('df1.leads_id') == col('df2.ID'), how='left')\
 .selectExpr('mobile',
 			'dealerid as dealer_id',
 			'last_fir_contact_date_brand',
@@ -215,12 +216,12 @@ oppor = hc.sql('''
 	phone AS mobile,
 	detail['brand_id'] brand_id,
 	detail['series_id'] series_id,
-	to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+	to_utc_timestamp(detail['create_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
 	pt
 	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
         detail['brand_id'] in (121, 101)
-        and type = 'deliver'
+        and type = 'oppor'
 		AND pt >= {0}
 		and phone is not null and trim(phone) !=''
 '''.format(this_month_start))
@@ -235,7 +236,7 @@ trial = hc.sql('''
 	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
         detail['brand_id'] in (121, 101)
-        and type = 'trail'
+        and type = 'trial'
 		AND pt >= {0}
 		and phone is not null and trim(phone) !=''
 '''.format(this_month_start))
@@ -506,11 +507,28 @@ GROUP BY activity_name,brand
 ## 首触车系维表
 hc.sql('''
 INSERT OVERWRITE TABLE marketing_modeling.app_dim_car_series
-SELECT
-	fir_contact_series_brand,
-	brand
-FROM marketing_modeling.cdm_customer_touchpoints_profile_a
-GROUP BY fir_contact_series_brand,brand
+select
+distinct
+a.fir_contact_series,
+a.brand
+from 
+(
+select
+fir_contact_series_brand fir_contact_series,
+brand
+from 
+marketing_modeling.cdm_customer_touchpoints_profile_a
+) a
+inner join
+(
+select
+series_id,
+case when  brand_id=101  then 'RW'
+when brand_id=121 then 'MG'
+else brand_id end brand_id
+from dtwarehouse.cdm_dim_series where series_chinese_name not like '%飞凡汽车%') b
+on a.fir_contact_series=b.series_id and a.brand = b.brand_id
+order by a.fir_contact_series
 ''')
 
 
@@ -526,10 +544,30 @@ SELECT * FROM
    CASE WHEN brand_id = 121 THEN 'MG'
    WHEN brand_id = 101 THEN 'RW'
    END AS brand
-FROM dtwarehouse.cdm_dim_dealer_info) t
+FROM dtwarehouse.cdm_dim_dealer_info where rfs_name not like '%RWR%') t
 GROUP BY rfs_code,mac_code,rfs_name,mac_name, brand
 ''')
 
 
-# 整理再拼一张时间维度表， select + union all
-
+# 整理再拼一张时间维度表， select + union a
+hc.sql('''
+INSERT OVERWRITE TABLE marketing_modeling.app_month_map_week
+select
+a.month_key,
+a.clndr_wk_desc
+from 
+(
+SELECT
+from_unixtime(unix_timestamp(cast(day_key as string),'yyyymmdd'),'yyyymm')  month_key,
+concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10)) as clndr_wk_desc
+FROM dtwarehouse.cdm_dim_calendar 
+GROUP BY from_unixtime(unix_timestamp(cast(day_key as string),'yyyymmdd'),'yyyymm'), clndr_wk_desc ORDER BY from_unixtime(unix_timestamp(cast(day_key as string),'yyyymmdd'),'yyyymm') desc
+) a
+inner join
+(
+select
+distinct
+fir_contact_week
+from marketing_modeling.app_touchpoints_profile_weekly
+)  b on a.clndr_wk_desc = b.fir_contact_week
+''')

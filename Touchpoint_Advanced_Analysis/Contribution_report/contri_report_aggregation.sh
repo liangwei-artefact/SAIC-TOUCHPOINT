@@ -23,7 +23,7 @@ set hive.exec.max.dynamic.partitions=2048;
 set hive.exec.max.dynamic.partitions.pernode=1000;
 
 WITH raw_final_df AS (
-    SELECT * FROM marketing_modeling.app_tmp_tp_asset_report_a
+    SELECT * FROM marketing_modeling.app_${brand}_tmp_tp_asset_report_a
 ),
 
 agged_profile_df AS (
@@ -36,7 +36,7 @@ agged_profile_df AS (
         rfs_code,
         area,
         cust_vol
-    FROM marketing_modeling.app_tmp_agged_profile
+    FROM marketing_modeling.app_${brand}_tmp_agged_profile
 
 ),
 
@@ -50,7 +50,7 @@ undeal_report_df AS (
         rfs_code,
         area,
         undeal_vol
-    FROM marketing_modeling.app_tmp_undeal_report_a
+    FROM marketing_modeling.app_${brand}_tmp_undeal_report_a
 
 ),
 

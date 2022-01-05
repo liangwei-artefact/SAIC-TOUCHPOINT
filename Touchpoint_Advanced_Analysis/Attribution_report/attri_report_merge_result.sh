@@ -50,7 +50,7 @@ from (
                          IF(attribution_tp = 'deal', attribution, null)    as deal_mk_attribution,
                          brand,
                          pt
-                  from app_mk_attribution_report
+                  from marketing_modeling.app_mk_attribution_report
                   where pt = '${pt_month}'
                     and brand = '${brand}'
               ) m
@@ -72,7 +72,7 @@ from (
                     IF(attribution_tp = 'deal', attribution, null)    as deal_ml_attribution,
                     brand,
                     pt
-             from app_ml_attribution_report
+             from marketing_modeling.app_ml_attribution_report
              where pt = '${pt_month}'
                and brand = '${brand}'
          ) m

@@ -27,4 +27,5 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_tp_asset_report_a (
 	  tp_deal_rate DOUBLE COMMENT '触点成交转化率'
 ) PARTITIONED BY (
   pt STRING COMMENT '分区键，yyyymmdd格式的日期，数据生成日期',
-  brand STRING COMMENT '分区键，品牌，MG/RW') STORED AS ORC;"
+  brand STRING COMMENT '分区键，品牌，MG/RW') STORED AS ORC
+  ;"

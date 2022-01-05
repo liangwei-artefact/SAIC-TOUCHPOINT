@@ -9,7 +9,7 @@
 #*    
 #*********************************************************************/
 
-pt=$3
+pt=$1
 pt_month=$(date -d "${pt}" +%Y%m)
 cur_month_start=$(date -d "${pt_month}01" +%Y%m%d)
 cd $(dirname $(readlink -f $0))
@@ -24,14 +24,7 @@ for touchpoint in ${touchpoints[@]}
 do
     /usr/bin/python3.6 attri_report_model_running.py ${touchpoint} MG $cur_month_start
     /usr/bin/python3.6 attri_report_model_running.py ${touchpoint} RW $cur_month_start
-    spark-submit --master yarn  \
-    --driver-memory 10G  \
-    --num-executors 10 \
-    --executor-cores 10 \
-    --executor-memory 32G \
-    --conf "spark.excutor.memoryOverhead=10G"  \
-    --queue $queuename \
-    attri_report_save_result.py $touchpoint $pt_month
+    sh attri_report_save_result.sh $queuename $touchpoint $pt_month
 done
 
 sh attri_report_merge_result.sh $pt 'MG'

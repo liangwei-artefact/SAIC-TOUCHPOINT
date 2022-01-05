@@ -65,7 +65,7 @@ tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() <
 tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() + pd.DateOffset(months=6) >= tp_profile_df['action_time'].dt.normalize()]
 tp_profile_df['mobile'] = tp_profile_df['mobile'].astype('int64')
 
-
+#OK 存在数据
 
 # ---【指标计算】---
 
@@ -149,10 +149,10 @@ undeal_df = final_df[['mobile','fir_contact_month','fir_contact_tp_id','fir_cont
 spark_agged_profile_df = hc.createDataFrame(agged_profile_df)
 spark_agged_profile_df.createOrReplaceTempView('spark_agged_profile_df')
 hc.sql('''
-DROP TABLE IF EXISTS marketing_modeling.app_tmp_agged_profile
-''')
+DROP TABLE IF EXISTS marketing_modeling.app_{0}_tmp_agged_profile
+'''.format(brand))
 hc.sql('''
-CREATE TABLE IF NOT EXISTS marketing_modeling.app_tmp_agged_profile AS
+CREATE TABLE IF NOT EXISTS marketing_modeling.app_{0}_tmp_agged_profile AS
 SELECT
     fir_contact_month,
     fir_contact_tp_id,
@@ -162,7 +162,7 @@ SELECT
 	area,
     cust_vol
 FROM spark_agged_profile_df
-''')
+'''.format(brand))
  
 ##  指标中间表
 df_schema = StructType([StructField("mobile", StringType()),
@@ -188,10 +188,10 @@ df_schema = StructType([StructField("mobile", StringType()),
 spark_final_df = hc.createDataFrame(final_df, schema=df_schema) 
 spark_final_df.createOrReplaceTempView('spark_final_df')
 hc.sql('''
-DROP TABLE IF EXISTS marketing_modeling.app_tmp_tp_asset_report_a
-''')
+DROP TABLE IF EXISTS marketing_modeling.app_{0}_tmp_tp_asset_report_a
+'''.format(brand))
 hc.sql('''
-CREATE TABLE IF NOT EXISTS marketing_modeling.app_tmp_tp_asset_report_a AS
+CREATE TABLE IF NOT EXISTS marketing_modeling.app_{0}_tmp_tp_asset_report_a AS
 SELECT 
     mobile,
     fir_contact_month,
@@ -213,7 +213,7 @@ SELECT
     exit_flag,
     undeal_flag
 FROM spark_final_df
-''')
+'''.format(brand))
 
 ## 未成交人数
 df_schema = StructType([StructField("fir_contact_month", StringType()),
@@ -227,10 +227,10 @@ df_schema = StructType([StructField("fir_contact_month", StringType()),
 spark_tmp_df = hc.createDataFrame(undeal_df, schema=df_schema) 
 spark_tmp_df.createOrReplaceTempView('spark_tmp_df')
 hc.sql('''
-DROP TABLE IF EXISTS marketing_modeling.app_tmp_undeal_report_a
-''')
+DROP TABLE IF EXISTS marketing_modeling.app_{0}_tmp_undeal_report_a
+'''.format(brand))
 hc.sql('''
-CREATE TABLE IF NOT EXISTS marketing_modeling.app_tmp_undeal_report_a AS
+CREATE TABLE IF NOT EXISTS marketing_modeling.app_{0}_tmp_undeal_report_a AS
 SELECT
     fir_contact_month,
     fir_contact_tp_id,
@@ -240,4 +240,4 @@ SELECT
     area,
     undeal_vol
 FROM spark_tmp_df
-''')
+'''.format(brand))

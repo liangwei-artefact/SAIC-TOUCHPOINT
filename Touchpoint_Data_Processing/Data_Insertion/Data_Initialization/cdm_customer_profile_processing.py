@@ -59,7 +59,6 @@ from cdp.cdm_cdp_customer_behavior_detail
 	WHERE 
 		TYPE = 'leads_pool' 
 		AND pt = {0} 
-		AND phone regexp '^[1][3-9][0-9]{9}$'
 """.format(pt))
 
 fir_contact_brand_df = fir_contact_brand_df.alias('df').join(leads_pool.alias('df1'),col('df.leads_id') == col('df1.id'), how='left')

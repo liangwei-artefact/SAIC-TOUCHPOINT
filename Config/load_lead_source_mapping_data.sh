@@ -17,7 +17,7 @@ set mapreduce.map.memory.mb=4096;
 set mapreduce.reduce.memory.mb=8192;
 
 DROP TABLE IF EXISTS marketing_modeling.cdm_lead_source_mapping;
-CREATE TABLE IF NOT EXISTS marketing_modeling.cdm_lead_source_mapping (
+CREATE  TABLE IF NOT EXISTS marketing_modeling.cdm_lead_source_mapping (
     sec_level_sour string COMMENT '触点二级行为',
     third_level_sour string COMMENT '触点三级行为',
     sour_detail string COMMENT '触点行为细节',
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS marketing_modeling.cdm_lead_source_mapping (
 row format delimited
 fields terminated by '|'
 STORED AS TEXTFILE
--- LOCATION '/warehouse/tablespace/managed/hive/marketing_modeling.db/cdm/cdm_lead_source_mapping'
+LOCATION '/user/hive/warehouse/marketing_modeling.db/cdm_lead_source_mapping'
 "
 # 拷贝维表csv，生成临时csv
 #cp cdm_lead_source_mapping.csv cdm_lead_source_mapping_tmp.csv

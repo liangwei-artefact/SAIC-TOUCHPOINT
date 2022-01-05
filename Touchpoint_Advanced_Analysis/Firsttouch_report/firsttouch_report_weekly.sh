@@ -399,7 +399,7 @@ INSERT overwrite TABLE marketing_modeling.app_fir_contact_conversion_report_week
 SELECT
     mac_code,
     rfs_code,
-	area,
+	  area,
     is_sec_net,
     activity_name,
     fir_contact_tp_id,

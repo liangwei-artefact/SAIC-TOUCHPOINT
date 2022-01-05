@@ -7,6 +7,7 @@
 #*修改记录:
 #*
 #*********************************************************************/
+export PATH=/usr/bin/python:/usr/jdk64/jdk1.8.0_112/bin:/usr/jdk64/jdk1.8.0_112/jre/bin:/usr/jdk64/jdk1.8.0_112/bin:/usr/jdk64/jdk1.8.0_112/jre/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/jdk64/jdk1.8.0_112/bin:/usr/hdp/3.1.0.0-78/hadoop/bin:/usr/hdp/3.1.0.0-78/spark2/bin
 cd $(dirname $(readlink -f $0))
 # MG / RW
 brand=$1

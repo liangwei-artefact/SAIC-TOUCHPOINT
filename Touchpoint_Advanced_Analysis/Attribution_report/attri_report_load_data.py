@@ -122,7 +122,7 @@ INNER JOIN
 ) b
 ON a.mobile = b.mobile
 '''.format(cur_month_start, cur_month_end, bf_month_start, cur_month_end))
-mg_tp_analysis_base.toPandas().to_csv('./mg_tp_analysis_base.csv', header=None, index=False, sep='\t')
+mg_tp_analysis_base.toPandas().to_csv('./mg_tp_analysis_base_list.csv', header=None, index=False, sep='\t')
 
 
 rw_tp_analysis_base = hc.sql('''

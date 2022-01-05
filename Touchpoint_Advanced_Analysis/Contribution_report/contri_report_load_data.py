@@ -73,7 +73,6 @@ hc.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
 
 mobile_to_remove_df = hc.sql('''
 select 
-distinct
 mobile
 from dtwarehouse.cdm_dim_dealer_employee_info 
 where mobile regexp '^[1][3-9][0-9]{9}$' 

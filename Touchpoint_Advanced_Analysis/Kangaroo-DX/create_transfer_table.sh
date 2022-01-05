@@ -1,36 +1,34 @@
 #!/bin/bash
 hive -e "
-DROP  TABLE IF EXISTS marketing_modeling.app_mk_attribution_report;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_mk_attribution_report (
+DROP  TABLE IF EXISTS marketing_modeling.app_mk_attribution_report_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_mk_attribution_report_t (
   touchpoint_id STRING COMMENT '触点id',
   touchpoint_name STRING COMMENT '触点名称',
   attribution STRING COMMENT '马尔可夫贡献度结果',
-  brand STRING COMMENT '品牌, MG or RW'
-) PARTITIONED BY (
+  brand STRING COMMENT '品牌, MG or RW',
   attribution_tp STRING COMMENT '归因触点',
   pt STRING COMMENT '分区键，yyyymm 格式的月份，训练样本区间下限'
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_mk_attribution_report'
+location '/user/hive/warehouse/marketing_modeling.db/app_mk_attribution_report_t'
 ;
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_ml_attribution_report;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_ml_attribution_report (
+DROP  TABLE IF EXISTS marketing_modeling.app_ml_attribution_report_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_ml_attribution_report_t (
   touchpoint_id STRING COMMENT '触点id',
   touchpoint_name STRING COMMENT '触点名称',
   attribution STRING COMMENT '机器学习贡献度',
-  brand STRING COMMENT '品牌, MG or RW'
-) PARTITIONED BY (
+  brand STRING COMMENT '品牌, MG or RW',
   attribution_tp STRING COMMENT '归因触点',
   pt STRING COMMENT '分区键，yyyymm 格式的月份，训练样本区间下限'
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_ml_attribution_report'
+location '/user/hive/warehouse/marketing_modeling.db/app_ml_attribution_report_t'
 ;
 
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_attribution_report;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_attribution_report (
+DROP  TABLE IF EXISTS marketing_modeling.app_attribution_report_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_attribution_report_t (
     touchpoint_id STRING COMMENT '触点id',
     touchpoint_name STRING COMMENT '触点名称',
     instore_mk_attribution STRING,
@@ -38,17 +36,16 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_attribution_report (
     deal_mk_attribution STRING,
     instore_ml_attribution STRING,
     trial_ml_attribution STRING,
-    deal_ml_attribution STRING
-) PARTITIONED BY (
+    deal_ml_attribution STRING,
     pt STRING COMMENT '分区键，yyyymm 格式的月份，训练样本区间下限',
     brand STRING
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_attribution_report'
+location '/user/hive/warehouse/marketing_modeling.db/app_attribution_report_t'
 ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.app_fir_contact_conversion_report_monthly_a;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversion_report_monthly_a (
+DROP TABLE IF EXISTS marketing_modeling.app_fir_contact_conversion_report_monthly_a_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversion_report_monthly_a_t (
   mac_code STRING COMMENT '大区代码',
   rfs_code STRING COMMENT '小区代码',
   area STRING COMMENT '首触省份',
@@ -62,13 +59,13 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversio
   trial_vol BIGINT COMMENT '试驾人数，按电话号码去重',
   consume_vol BIGINT COMMENT '订单人数(含交现车)，按电话号码去重',
   deliver_vol BIGINT COMMENT '交车人数，按电话号码去重',
-  brand STRING COMMENT '品牌'
-) PARTITIONED BY (pt STRING COMMENT '分区键，yyyymm 格式的日期') STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_fir_contact_conversion_report_monthly_a'
+  brand STRING COMMENT '品牌',
+  pt STRING COMMENT '分区键，yyyymm 格式的日期') STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_fir_contact_conversion_report_monthly_a_t'
 ;
 
-DROP TABLE IF EXISTS marketing_modeling.app_fir_contact_conversion_report_weekly_a;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversion_report_weekly_a (
+DROP TABLE IF EXISTS marketing_modeling.app_fir_contact_conversion_report_weekly_a_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversion_report_weekly_a_t (
   mac_code STRING COMMENT '大区代码',
   rfs_code STRING COMMENT '小区代码',
   area STRING COMMENT '首触省份',
@@ -82,51 +79,15 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversio
   trial_vol BIGINT COMMENT '试驾人数，按电话号码去重',
   consume_vol BIGINT COMMENT '订单人数(含交现车)，按电话号码去重',
   deliver_vol BIGINT COMMENT '交车人数，按电话号码去重',
-  brand STRING COMMENT '品牌'
-) PARTITIONED BY (pt STRING COMMENT '分区键，yyyyww 格式的日期') STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_fir_contact_conversion_report_weekly_a'
-;
-
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_area;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_area (
-  area STRING COMMENT '省份',
-  brand STRING COMMENT '品牌, MG or RW'
-) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_dim_area'
-;
-
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_activity_name;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_activity_name (
-  activity_name STRING COMMENT '活动名称',
-  brand STRING COMMENT '品牌, MG or RW'
-) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_dim_activity_name'
+  brand STRING COMMENT '品牌',
+  pt STRING COMMENT '分区键，yyyyww 格式的日期') STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_fir_contact_conversion_report_weekly_a_t'
 ;
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_car_series;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_car_series (
-  fir_contact_series STRING COMMENT '首触车系',
-  brand STRING COMMENT '品牌, MG or RW'
-) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_dim_car_series'
-;
 
-
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_tree_big_small_area;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_tree_big_small_area (
-  rfs_code STRING COMMENT '小区代码',
-  mac_code STRING COMMENT '大区代码',
-  rfs_name STRING COMMENT '小区中文名',
-  mac_name STRING COMMENT '大区中文名',
-  brand STRING COMMENT '品牌 RW,MG'
-) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_dim_tree_big_small_area'
-;
-
-
-DROP TABLE IF EXISTS marketing_modeling.app_touchpoints_profile_monthly;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_monthly (
+DROP TABLE IF EXISTS marketing_modeling.app_touchpoints_profile_monthly_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_monthly_t (
   mobile STRING COMMENT '电话号码',
   fir_contact_month STRING COMMENT '首触月份',
   fir_contact_date STRING COMMENT '首触时间',
@@ -137,15 +98,14 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_m
   is_sec_net STRING COMMENT '是否二网 1:是 0：否',
   activity_name STRING COMMENT '首触活动名称',
   fir_contact_tp_id STRING COMMENT '首触触点id',
-  brand STRING COMMENT '品牌'
-) PARTITIONED BY (
+  brand STRING COMMENT '品牌',
   pt STRING COMMENT 'month used by partition, format: yyyymm'
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_touchpoints_profile_monthly'
+location '/user/hive/warehouse/marketing_modeling.db/app_touchpoints_profile_monthly_t'
 ;
 
-DROP TABLE IF EXISTS marketing_modeling.app_touchpoints_profile_weekly;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_weekly (
+DROP TABLE IF EXISTS marketing_modeling.app_touchpoints_profile_weekly_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_weekly_t (
   mobile STRING COMMENT '电话号码',
   fir_contact_week STRING COMMENT '首触周',
   fir_contact_date STRING COMMENT '首触时间',
@@ -156,16 +116,15 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_w
   is_sec_net STRING COMMENT '是否二网 1:是 0：否',
   activity_name STRING COMMENT '首触活动名称',
   fir_contact_tp_id STRING COMMENT '首触触点id',
-  brand STRING COMMENT '品牌'
-) PARTITIONED BY (
+  brand STRING COMMENT '品牌',
   pt STRING COMMENT 'week used by partition, format: yyyyww'
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_touchpoints_profile_weekly'
+location '/user/hive/warehouse/marketing_modeling.db/app_touchpoints_profile_weekly_t'
 ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.app_tp_asset_report_a;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_tp_asset_report_a (
+DROP TABLE IF EXISTS marketing_modeling.app_tp_asset_report_a_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_tp_asset_report_a_t (
 	  touchpoint_level INT COMMENT '触点等级',
 	  touchpoint_id STRING COMMENT '触点码值',
 	  fir_contact_month STRING COMMENT '首触月份',
@@ -187,16 +146,15 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_tp_asset_report_a (
 	  exit_rate DOUBLE COMMENT '触点停止率',
 	  tp_instore_rate DOUBLE COMMENT '触点到店转化率',
 	  tp_trial_rate DOUBLE COMMENT '触点试驾转化率',
-	  tp_deal_rate DOUBLE COMMENT '触点成交转化率'
-) PARTITIONED BY (
+	  tp_deal_rate DOUBLE COMMENT '触点成交转化率',
   pt STRING COMMENT '分区键，yyyymmdd格式的日期，数据生成日期',
   brand STRING COMMENT '分区键，品牌，MG/RW') STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_tp_asset_report_a'
+location '/user/hive/warehouse/marketing_modeling.db/app_tp_asset_report_a_t'
   ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.cdm_customer_touchpoints_profile_a;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_customer_touchpoints_profile_a (
+DROP TABLE IF EXISTS marketing_modeling.cdm_customer_touchpoints_profile_a_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_customer_touchpoints_profile_a_t (
   mobile STRING COMMENT '电话号码',
   last_fir_contact_date_brand STRING COMMENT '首触时间',
   mac_code STRING COMMENT '首触大区代码',
@@ -208,17 +166,56 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_customer_touchpoints_
   fir_contact_fir_sour_brand STRING COMMENT '一级线索来源',
   fir_contact_sec_sour_brand STRING COMMENT '二级线索来源',
   fir_contact_series_brand STRING COMMENT '首触车系',
-  brand STRING COMMENT '品牌, MG or RW'
-) PARTITIONED BY (
+  brand STRING COMMENT '品牌, MG or RW',
   pt STRING COMMENT 'date used by partition, format: yyyymmdd'
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/cdm_customer_touchpoints_profile_a'
+location '/user/hive/warehouse/marketing_modeling.db/cdm_customer_touchpoints_profile_a_t'
 ;
 
-DROP TABLE IF EXISTS marketing_modeling.app_month_map_week;
-CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_month_map_week (
-  month_key STRING COMMENT '大区代码',
-  clndr_wk_desc STRING COMMENT '小区代码'
+
+
+DROP  TABLE IF EXISTS marketing_modeling.app_dim_area_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_area_t (
+  area STRING COMMENT '省份',
+  brand STRING COMMENT '品牌, MG or RW'
 ) STORED AS ORC
-location '/user/hive/warehouse/marketing_modeling.db/app_month_map_week';
+location '/user/hive/warehouse/marketing_modeling.db/app_dim_area_t'
+;
+
+DROP  TABLE IF EXISTS marketing_modeling.app_dim_activity_name_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_activity_name_t (
+  activity_name STRING COMMENT '活动名称',
+  brand STRING COMMENT '品牌, MG or RW'
+) STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_dim_activity_name_t'
+;
+
+
+DROP  TABLE IF EXISTS marketing_modeling.app_dim_car_series_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_car_series_t (
+  fir_contact_series STRING COMMENT '首触车系',
+  brand STRING COMMENT '品牌, MG or RW',
+  fir_contact_series_id string
+) STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_dim_car_series_t'
+;
+
+
+DROP  TABLE IF EXISTS marketing_modeling.app_dim_tree_big_small_area_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_tree_big_small_area_t (
+  rfs_code STRING COMMENT '小区代码',
+  mac_code STRING COMMENT '大区代码',
+  rfs_name STRING COMMENT '小区中文名',
+  mac_name STRING COMMENT '大区中文名',
+  brand STRING COMMENT '品牌 RW,MG'
+) STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_dim_tree_big_small_area_t'
+;
+
+DROP TABLE IF EXISTS marketing_modeling.app_month_map_week_t;
+CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_month_map_week_t (
+  month_key STRING COMMENT '月',
+  clndr_wk_desc STRING COMMENT '周'
+) STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_month_map_week_t';
 "

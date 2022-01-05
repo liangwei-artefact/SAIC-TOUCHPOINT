@@ -10,7 +10,6 @@ queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.
 
 hive --hivevar pt1_date=$pt1_date --hivevar pt2_date=$pt2_date --hivevar queue_name=${queue_name} -e "
 set tez.queue.name=${queue_name};
-set hive.execution.engine=mr;
 set hive.mapjoin.smalltable.filesize=55000000;
 set hive.auto.convert.join = false;
 

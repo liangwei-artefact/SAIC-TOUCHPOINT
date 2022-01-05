@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS marketing_modeling.cdm_touchpoints_id_system (
 row format delimited
 fields terminated by '|'
 STORED AS TEXTFILE
--- LOCATION '/warehouse/tablespace/managed/hive/marketing_modeling.db/cdm/cdm_touchpoints_id_system'
+LOCATION '/user/hive/warehouse/marketing_modeling.db/cdm_touchpoints_id_system'
 "
 # 拷贝维表csv，生成临时csv
 #cp cdm_touchpoints_id_system.csv cdm_touchpoints_id_system_tmp.csv

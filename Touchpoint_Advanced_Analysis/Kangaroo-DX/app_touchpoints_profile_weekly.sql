@@ -1,0 +1,3 @@
+insert into app_touchpoints_profile_weekly  ( mobile ,fir_contact_week ,fir_contact_date ,fir_contact_series ,mac_code ,rfs_code ,area ,is_sec_net ,activity_name ,fir_contact_tp_id ,brand ,pt ) values  ( ?  ,? ,? ,? ,? ,? ,? ,? ,? ,? ,? ,#{pt} )
+ON DUPLICATE KEY UPDATE
+mobile=values(mobile) ,fir_contact_week=values(fir_contact_week),fir_contact_date=values(fir_contact_date),fir_contact_series=values(fir_contact_series),mac_code=values(mac_code),rfs_code=values(rfs_code),area=values(area),is_sec_net=values(is_sec_net),activity_name=values(activity_name),fir_contact_tp_id=values(fir_contact_tp_id),brand=values(brand),pt=values(pt)
