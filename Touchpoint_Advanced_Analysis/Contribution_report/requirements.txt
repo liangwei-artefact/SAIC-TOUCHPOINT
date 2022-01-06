@@ -1,1 +1,1 @@
-pyArrow>=0.8.0
+PyArrow>=0.8.0
