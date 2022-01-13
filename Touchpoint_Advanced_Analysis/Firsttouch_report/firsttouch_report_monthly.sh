@@ -16,7 +16,7 @@ cur_month_end=$(date -d "${cur_month_start} +1 month -1 day" +%Y%m%d)
 cd $(dirname $(readlink -f $0))
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
-hive -hivevar queuename=queuename --hivevar pt=$pt --hivevar pt_month=$pt_month --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end -e "
+hive -hivevar queuename=$queuename --hivevar pt=$pt --hivevar pt_month=$pt_month --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end -e "
 set tez.queue.name=${queuename};
 set hive.exec.dynamic.partition.mode=nonstrict;
 set hive.groupby.position.alias=true;
@@ -78,8 +78,7 @@ instore_df AS (
         filtered_profile_df.brand,
         COUNT(DISTINCT raw_instore_df.mobile) AS instore_vol
     FROM (
-        SELECT
-            phone AS mobile,
+        SELECT phone AS mobile,
             CASE
                 WHEN detail['brand_id'] = '121' THEN 'MG'
                 WHEN detail['brand_id'] = '101' THEN 'RW'

@@ -3,7 +3,7 @@
 
 from cProfile import run
 import sys
-import numpy as np
+
 from pyspark.sql import functions as F
 from pyspark import SparkContext
 from pyspark.sql import SparkSession,HiveContext,Window

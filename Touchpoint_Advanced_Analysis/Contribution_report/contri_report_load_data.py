@@ -70,11 +70,12 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("Attribution_Mo
     .getOrCreate()
 hc = HiveContext(spark_session.sparkContext)
 hc.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
+hc.setConf("metastore.catalog.default","hive")
 
 mobile_to_remove_df = hc.sql('''
-select 
+select
 mobile
-from dtwarehouse.cdm_dim_dealer_employee_info 
+from marketing_modeling.cdm_dim_dealer_employee_info 
 where mobile regexp '^[1][3-9][0-9]{9}$' 
 group by mobile
 ''')

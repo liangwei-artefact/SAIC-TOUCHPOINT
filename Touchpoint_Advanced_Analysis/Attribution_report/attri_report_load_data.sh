@@ -26,7 +26,7 @@ echo "bf_month_start:" $bf_month_start
 echo "bf_month_end:" $bf_month_end
 
 echo "Generate temporary table to store MG selected data......"
-hive -hivevar queuename=queuename --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end --hivevar bf_month_start=$bf_month_start -e "
+hive -hivevar queuename=$queuename --hivevar cur_month_start=$cur_month_start --hivevar cur_month_end=$cur_month_end --hivevar bf_month_start=$bf_month_start -e "
 set tez.queue.name=${queuename};
 set mapreduce.map.memory.mb=4096;
 
@@ -40,7 +40,8 @@ FROM
 (
     SELECT a.mobile
     FROM marketing_modeling.dw_mg_tp_ts_all_i a
-    LEFT JOIN dtwarehouse.cdm_dim_dealer_employee_info b
+    -- LEFT JOIN dtwarehouse.cdm_dim_dealer_employee_info b
+    LEFT JOIN marketing_modeling.cdm_dim_dealer_employee_info b
     ON a.mobile = b.mobile
     WHERE 
         pt >= ${cur_month_start} AND pt <= ${cur_month_end}

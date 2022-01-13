@@ -218,4 +218,51 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_month_map_week_t (
   clndr_wk_desc STRING COMMENT '周'
 ) STORED AS ORC
 location '/user/hive/warehouse/marketing_modeling.db/app_month_map_week_t';
+
+
+
+DROP TABLE IF EXISTS marketing_modeling.cdm_dim_dealer_employee_info;
+CREATE EXTERNAL TABLE marketing_modeling.cdm_dim_dealer_employee_info(
+id bigint
+,username varchar(100)
+,realname varchar(100)
+,cardno varchar(100)
+,checkstatus varchar(100)
+,brand_id varchar(100)
+,chinese_name varchar(100)
+,saic varchar(6)
+,sales_code varchar(9)
+,sales_name varchar(100)
+,rfs_code varchar(9)
+,rfs_name varchar(200)
+,mac_code varchar(9)
+,mac_name varchar(200)
+,showroom_code varchar(100)
+,dealer_code varchar(9)
+,dealer_shortname varchar(100)
+,dealer_level varchar(20)
+,area varchar(100)
+,city_name varchar(100)
+,address varchar(255)
+,postcode varchar(100)
+,mobile varchar(100)
+,email varchar(100)
+,gender varchar(10)
+,member_type_id tinyint
+,status varchar(10)
+,is_on_job varchar(10)
+,birth date
+,org_code varchar(100)
+,entrytime timestamp
+,leavetime timestamp
+,create_date timestamp
+,login_date timestamp
+,is_sis tinyint
+,roleid varchar(255)
+,rolename varchar(255)
+,labelname varchar(255)
+,is_deleted tinyint
+)
+STORED AS orc
+location '/user/hive/warehouse/marketing_modeling.db/cdm_dim_dealer_employee_info'
 "

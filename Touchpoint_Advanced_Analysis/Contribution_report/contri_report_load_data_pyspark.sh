@@ -14,6 +14,7 @@ cd $(dirname $(readlink -f $0))
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 echo "queuename"_${queuename}
 spark-submit --master yarn \
+--deploy-mode client \
 --driver-memory 5G  \
 --num-executors 8 \
 --executor-cores 8 \

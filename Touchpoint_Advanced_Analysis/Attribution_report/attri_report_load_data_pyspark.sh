@@ -18,6 +18,7 @@ spark-submit --master yarn \
 --num-executors 8 \
 --executor-cores 8 \
 --executor-memory 20G \
+--deploy-mode client \
 --conf "spark.excutor.memoryOverhead=10G"  \
 --queue $queuename \
 attri_report_load_data.py $pt

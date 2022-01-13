@@ -10,7 +10,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 import pandas as pd
-import numpy as np
+
 import datetime
 import calendar
 
@@ -107,7 +107,7 @@ FROM
 (
     SELECT a.mobile
     FROM marketing_modeling.cdm_mg_tp_ts_all_i a
-    LEFT JOIN dtwarehouse.cdm_dim_dealer_employee_info b
+    LEFT JOIN marketing_modeling.cdm_dim_dealer_employee_info b
     ON a.mobile = b.mobile
     WHERE 
         pt >= {0} AND pt <= {1}
@@ -122,7 +122,7 @@ INNER JOIN
 ) b
 ON a.mobile = b.mobile
 '''.format(cur_month_start, cur_month_end, bf_month_start, cur_month_end))
-mg_tp_analysis_base.toPandas().to_csv('./mg_tp_analysis_base_list.csv', header=None, index=False, sep='\t')
+mg_tp_analysis_base.toPandas().to_csv('./mg_tp_analysis_base.csv', header=None, index=False, sep='\t')
 
 
 rw_tp_analysis_base = hc.sql('''
@@ -134,7 +134,7 @@ FROM
 (
     SELECT a.mobile
     FROM marketing_modeling.cdm_rw_tp_ts_all_i a
-    LEFT JOIN dtwarehouse.cdm_dim_dealer_employee_info b
+    LEFT JOIN marketing_modeling.cdm_dim_dealer_employee_info b
     ON a.mobile = b.mobile
     WHERE 
         pt >= {0} AND pt <= {1}

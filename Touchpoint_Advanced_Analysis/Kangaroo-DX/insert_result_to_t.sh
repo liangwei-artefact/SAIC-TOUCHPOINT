@@ -114,7 +114,8 @@ touchpoint_level
 ,tp_deal_rate
 ,pt
 ,brand
-from marketing_modeling.app_tp_asset_report_a) a
+from marketing_modeling.app_tp_asset_report_a
+where touchpoint_id !='NaN') a
 inner join
 (
 select
@@ -122,7 +123,6 @@ touchpoint_id,
 touchpoint_level
 from
 marketing_modeling.cdm_touchpoints_id_system
-where touchpoint_level = 4
 )b
 on a.fir_contact_tp_id = b.touchpoint_id
 ;

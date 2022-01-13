@@ -12,7 +12,7 @@
 
 import sys
 import datetime
-import numpy as np
+
 import calendar
 
 from pyspark.sql import functions as F
@@ -43,6 +43,7 @@ hc = HiveContext(spark_session.sparkContext)
 hc.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
 hc.setConf("hive.exec.dynamici.partition","true")
 hc.setConf("hive.exec.orc.split.strategy","ETL")
+hc.setConf("metastore.catalog.default","hive")
 
 # ---【加载参数】---
 pt = sys.argv[1]
@@ -303,7 +304,7 @@ hc.sql('''
 INSERT OVERWRITE TABLE marketing_modeling.cdm_customer_touchpoints_profile_a PARTITION (pt)
 SELECT 
 cast(mobile as string) mobile,
-cast(last_fir_contact_date_brand as string) last_fir_contact_date_brand,
+trim(last_fir_contact_date_brand)  last_fir_contact_date_brand,
 cast(mac_code as string) mac_code,
 cast(rfs_code as string) rfs_code,
 cast(area as string) area,
@@ -469,7 +470,7 @@ filtered_profile_df AS (
 INSERT OVERWRITE TABLE marketing_modeling.app_touchpoints_profile_weekly PARTITION (pt)
 SELECT
     mobile,
-    fir_contact_week,
+    trim(fir_contact_week) fir_contact_week,
     fir_contact_date,
     fir_contact_series,
 	mac_code,
@@ -554,7 +555,7 @@ hc.sql('''
 INSERT OVERWRITE TABLE marketing_modeling.app_month_map_week
 select
 a.month_key,
-a.clndr_wk_desc
+trim(a.clndr_wk_desc) clndr_wk_desc
 from 
 (
 SELECT
@@ -569,5 +570,5 @@ select
 distinct
 fir_contact_week
 from marketing_modeling.app_touchpoints_profile_weekly
-)  b on a.clndr_wk_desc = b.fir_contact_week
+)  b on a.clndr_wk_desc = b.fir_contact_week 
 ''')

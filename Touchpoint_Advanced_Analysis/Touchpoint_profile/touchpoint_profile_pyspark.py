@@ -320,24 +320,20 @@ FROM marketing_modeling.cdm_lead_source_mapping
 on df1.fir_contact_fir_sour_brand = df4.fir_contact_fir_sour_brand and df1.fir_contact_sec_sour_brand=df4.fir_contact_sec_sour_brand and df1.brand=df4.brand) result
 '''.format(this_month_start,this_month_end,pt)
 
-fir_contact_brand_df_v2 = hc.sql(fir_contact_brand_df_v2_sql).createOrReplaceTempView('fir_contact_brand_df_v2')
-with open('./fir_contact_brand_df_v2_sql.sql', 'w') as f:
-    f.write(fir_contact_brand_df_v2_sql)
-hc.sql('select * from fir_contact_brand_df_v2 limit 100').toPandas().to_csv('./fir_contact_brand_df_v2')
 
 series_df_sql = '''
-SELECT 
-phone AS mobile,
-detail['brand_id'] brand_id,
-detail['series_id'] series_id,
-to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
-pt
-FROM cdp.cdm_cdp_customer_behavior_detail 
-WHERE 
-	detail['brand_id'] in (121, 101)
-	and type = 'deliver'
-	AND pt >= '{0}'
-	and phone is not null and trim(phone) !=''
+    SELECT 
+	phone AS mobile,
+	detail['brand_id'] brand_id,
+	detail['series_id'] series_id,
+	to_utc_timestamp(detail['create_time'],'yyyy-MM-dd HH:mm:ss')  behavior_time,
+	pt
+	FROM cdp.cdm_cdp_customer_behavior_detail 
+    WHERE 
+        detail['brand_id'] in (121, 101)
+        and type = 'oppor'
+		AND pt >= '{0}'
+		and phone is not null and trim(phone) !=''
 union all
 SELECT 
 	phone AS mobile,
@@ -348,7 +344,7 @@ SELECT
 	FROM cdp.cdm_cdp_customer_behavior_detail 
     WHERE 
         detail['brand_id'] in (121, 101)
-        and type = 'trail'
+        and type = 'trial'
 		AND pt >= '{0}'
 		and phone is not null and trim(phone) !=''
 
@@ -382,10 +378,6 @@ WHERE
 	and phone is not null and trim(phone) !=''
 '''.format(this_month_start,this_month_end,pt)
 
-with open('./series_df_sql.sql', 'w') as f:
-    f.write(series_df_sql)
-hc.sql(series_df_sql).createOrReplaceTempView("series_df")
-series_df = hc.sql('select * from series_df limit 100').toPandas().to_csv('series_df.csv')
 
 hc.sql('''
 insert overwrite table marketing_modeling.cdm_customer_touchpoints_profile_a partition (pt)

@@ -9,7 +9,7 @@
 # *修改记录:
 # *********************************************************************/
 
-import numpy as np
+
 import datetime
 import sys
 from pyspark.sql import functions as F
