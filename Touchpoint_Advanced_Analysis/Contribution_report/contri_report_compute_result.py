@@ -128,13 +128,13 @@ indicators_df = indicators_df.assign(instore_flag=np.where(indicators_df['fir_co
 touchpoint_df = pd.read_csv('touchpoint_df.csv', sep='\t', names=['tp_id','level_1_tp_id','level_2_tp_id','level_3_tp_id','level_4_tp_id'])
 
 final_df = indicators_df.merge(flagged_order_tp_profile_df, on=['mobile','fir_contact_month','fir_contact_date','fir_contact_series','mac_code','rfs_code','area','fir_contact_tp_id','tp_id','action_time'], how='left')\
-                        .merge(touchpoint_df, on='tp_id', how='left')
+                        .merge(touchpoint_df, on='tp_id', how='left') #########为啥不用首触线索 join
 final_df['undeal_flag'] = final_df['undeal_flag'].fillna(0).astype('int64')
 final_df['exit_flag'] = final_df['exit_flag'].fillna(0).astype('int64')
 final_df['fir_contact_date'] = final_df['fir_contact_date'].astype('string')
 final_df['action_time'] = final_df['action_time'].astype('string')
-final_df['fir_contact_month']=final_df['fir_contact_month'].astype('string')
-final_df['fir_contact_series']=final_df['fir_contact_series'].astype('string')
+#final_df['fir_contact_month']=final_df['fir_contact_month'].astype('string')
+#final_df['fir_contact_series']=final_df['fir_contact_series'].astype('string')
 final_df = final_df.drop(columns=['last_order_time', 'action_month', 'rank_num'])
 
 ## 计算未成交人数

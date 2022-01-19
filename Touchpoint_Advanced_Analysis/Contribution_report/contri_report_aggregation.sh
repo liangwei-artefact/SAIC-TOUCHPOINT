@@ -13,7 +13,7 @@ brand=$1
 cd $(dirname $(readlink -f $0))
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
-hive -hivevar queuename=queuename --hivevar brand=$brand -e "
+hive -hivevar queuename=$queuename --hivevar brand=$brand -e "
 set tez.queue.name=${queuename};
 set hive.exec.dynamic.partition.mode=nonstrict;
 set hive.groupby.position.alias=true;

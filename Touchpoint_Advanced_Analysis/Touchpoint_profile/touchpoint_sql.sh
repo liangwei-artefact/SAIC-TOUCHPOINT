@@ -292,7 +292,8 @@ FROM dtwarehouse.ods_leadspool_t_leads WHERE pt = ${pt}
 ) rh
 on ri.leads_id=rh.id
 ) fir_contact_brand_df ) df1
-inner join
+-- inner join
+left join
 (
 SELECT
     dlm_org_id,

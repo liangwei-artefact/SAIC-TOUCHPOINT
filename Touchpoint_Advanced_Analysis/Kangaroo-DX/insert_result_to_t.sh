@@ -35,7 +35,7 @@ touchpoint_id,
 touchpoint_level
 from
 marketing_modeling.cdm_touchpoints_id_system
-where touchpoint_level = 4
+-- where touchpoint_level = 4
 ) b
 on a.fir_contact_tp_id = b.touchpoint_id;
 
@@ -69,7 +69,7 @@ touchpoint_id,
 touchpoint_level
 from
 marketing_modeling.cdm_touchpoints_id_system
-where touchpoint_level = 4
+-- where touchpoint_level = 4
 )b
 on a.fir_contact_tp_id = b.touchpoint_id;
 
@@ -93,7 +93,7 @@ distinct
 touchpoint_level
 ,touchpoint_id
 ,fir_contact_month
-,fir_contact_tp_id
+,touchpoint_id fir_contact_tp_id
 ,fir_contact_series
 ,mac_code
 ,rfs_code
@@ -172,6 +172,7 @@ series_id,
 series_chinese_name
 from dtwarehouse.cdm_dim_series ) b
 on a.fir_contact_series=b.series_id
+where b.series_chinese_name != 'null'
 ;
 
 
