@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# 我本人是有问题的
+
 import numpy as np
 import datetime
 import sys
