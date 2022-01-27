@@ -15,6 +15,10 @@ b='W'
 pt_week=${pt_week_01/W0/"$b"}
 cur_week_start=$(date -d "${pt} -$(date -d "${pt}" +%u) days +1 day" +%Y%m%d)
 cur_week_end=$(date -d "${pt} -$(date -d "${pt}" +%u) days +7 day" +%Y%m%d)
+echo pt_week $pt_week
+echo cur_week_start $cur_week_start
+echo cur_week_end $cur_week_end
+
 cd $(dirname $(readlink -f $0))
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 

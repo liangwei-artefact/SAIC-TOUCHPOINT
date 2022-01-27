@@ -19,26 +19,10 @@ select
 from marketing_modeling.app_attribution_report;
 
 
--- exclude level_4
 insert overwrite table marketing_modeling.app_fir_contact_conversion_report_monthly_a_t
-select
-a.*
-from
-(
 SELECT
 *
-from marketing_modeling.app_fir_contact_conversion_report_monthly_a ) a
-inner join
-(
-select
-touchpoint_id,
-touchpoint_level
-from
-marketing_modeling.cdm_touchpoints_id_system
--- where touchpoint_level = 4
-) b
-on a.fir_contact_tp_id = b.touchpoint_id;
-
+from marketing_modeling.app_fir_contact_conversion_report_monthly_a;
 
 insert overwrite table marketing_modeling.app_fir_contact_conversion_report_weekly_a_t
 select
@@ -61,22 +45,49 @@ from
 (
 SELECT
 *
-from marketing_modeling.app_fir_contact_conversion_report_weekly_a) a
-inner join
-(
-select
-touchpoint_id,
-touchpoint_level
-from
-marketing_modeling.cdm_touchpoints_id_system
--- where touchpoint_level = 4
-)b
-on a.fir_contact_tp_id = b.touchpoint_id;
+from marketing_modeling.app_fir_contact_conversion_report_weekly_a) a;
+
 
 insert overwrite table marketing_modeling.app_touchpoints_profile_monthly_t
 select
-*
-from marketing_modeling.app_touchpoints_profile_monthly;
+ a.mobile
+,a.fir_contact_month
+,a.fir_contact_date
+,a.fir_contact_series
+,a.mac_code
+,a.rfs_code
+,a.area
+,a.is_sec_net
+,a.activity_name
+,a.fir_contact_tp_id
+,b.touchpoint_level
+,b.level_1_tp_id
+,a.brand
+,a.pt
+from
+(select
+mobile
+,fir_contact_month
+,fir_contact_date
+,fir_contact_series
+,mac_code
+,rfs_code
+,area
+,is_sec_net
+,activity_name
+,fir_contact_tp_id
+,brand
+,pt
+from marketing_modeling.app_touchpoints_profile_monthly ) a
+left join
+(
+select
+touchpoint_id,
+touchpoint_level,
+level_1_tp_id,
+brand
+from marketing_modeling.cdm_touchpoints_id_system
+) b on a.fir_contact_tp_id=b.touchpoint_id and a.brand=b.brand;
 
 insert overwrite table marketing_modeling.app_touchpoints_profile_weekly_t
 select
@@ -94,7 +105,7 @@ touchpoint_level
 ,touchpoint_id
 ,fir_contact_month
 ,touchpoint_id fir_contact_tp_id
-,fir_contact_series
+,cast( int(fir_contact_series) as string) fir_contact_series
 ,mac_code
 ,rfs_code
 ,area
@@ -144,7 +155,7 @@ insert overwrite table marketing_modeling.app_dim_area_t
 select
 distinct
 *
-from marketing_modeling.app_dim_area;
+from marketing_modeling.app_dim_area where area is not null;
 
 insert overwrite table marketing_modeling.app_dim_activity_name_t
 select
@@ -181,4 +192,20 @@ select
 distinct
 *
 from marketing_modeling.app_month_map_week;
+
+insert overwrite table marketing_modeling.app_undeal_report_a_t
+select
+distinct
+mobile ,
+fir_contact_month ,
+fir_contact_tp_id ,
+tp_id ,
+cast( int(fir_contact_series) as string) fir_contact_series ,
+mac_code ,
+rfs_code ,
+area ,
+undeal_vol ,
+pt ,
+brand
+from marketing_modeling.app_undeal_report_a;
 "

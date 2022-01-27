@@ -32,6 +32,8 @@ spark_session = SparkSession.builder.enableHiveSupport().appName("Attribution_Mo
                                                         .config("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "true") \
     .config("mapreduce.input.fileinputformat.input.dir.recursive", "true") \
     .config("spark.sql.execution.arrow.enabled", "true")\
+    .config("hive.exec.dynamici.partition","true")\
+    .config("hive.exec.dynamic.partition.mode","nonstrict")\
     .getOrCreate()
                                                         
 hc = HiveContext(spark_session.sparkContext)
@@ -143,6 +145,7 @@ undeal_df = final_df[['mobile','fir_contact_month','fir_contact_tp_id','fir_cont
             .groupby(['fir_contact_month','fir_contact_tp_id','fir_contact_series','mac_code','rfs_code','area'])['undeal_flag'].count().reset_index()\
             .rename(columns={'undeal_flag':'undeal_vol'})
 
+undeal_df_query = final_df[['mobile','fir_contact_month','fir_contact_tp_id','tp_id','fir_contact_series','mac_code','rfs_code','area','undeal_flag']]
 
 # ---【存入 Hive】---
 ## 首触总人数
@@ -240,4 +243,34 @@ SELECT
     area,
     undeal_vol
 FROM spark_tmp_df
+'''.format(brand))
+
+## 未成交人数 额外落表
+df_undeal_df_query_schema = StructType([
+                        StructField("mobile", StringType()),
+                        StructField("fir_contact_month", StringType()),
+                        StructField("fir_contact_tp_id", StringType()),
+                        StructField("tp_id",StringType()),
+                        StructField("fir_contact_series", StringType()),
+                        StructField("mac_code", StringType()),
+                        StructField("rfs_code", StringType()),
+                        StructField("area", StringType()),
+                        StructField("undeal_vol", IntegerType())])
+undeal_df_query_df = hc.createDataFrame(undeal_df_query, schema=df_undeal_df_query_schema)
+undeal_df_query_df.createOrReplaceTempView("undeal_df_query_df2")
+hc.sql('''
+insert overwrite table marketing_modeling.app_undeal_report_a PARTITION (pt,brand)
+select
+mobile,
+fir_contact_month ,
+fir_contact_tp_id ,
+tp_id,
+fir_contact_series ,
+mac_code ,
+rfs_code ,
+area ,
+undeal_vol ,
+fir_contact_month pt ,
+'{0}' brand
+from undeal_df_query_df2
 '''.format(brand))

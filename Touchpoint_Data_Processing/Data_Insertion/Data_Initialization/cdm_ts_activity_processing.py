@@ -131,7 +131,7 @@ rw_activity_df = activity_df.filter('brand = "RW"').alias('df1').join(rw_tp_id.a
 
 # Save result
 final_df = mg_ctivity_df.unionAll(rw_activity_df)
-final_df = final_df.select('mobile','activity_name','action_time','touchpoint_id','brand','pt')\
+final_df = final_df.select('mobile','activity_name','action_time','touchpoint_id','pt','brand')\
 .filter((col('mobile').rlike("^[1][3-9][0-9]{9}$"))\
         & (col('action_time').isNotNull())\
         & (col('touchpoint_id').isNotNull())\

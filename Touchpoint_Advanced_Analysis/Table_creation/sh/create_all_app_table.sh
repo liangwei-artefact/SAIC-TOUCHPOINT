@@ -1,6 +1,7 @@
 #!/bin/bash
+
 hive -e "
-DROP  TABLE IF EXISTS marketing_modeling.app_mk_attribution_report;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_mk_attribution_report (
   touchpoint_id STRING COMMENT '触点id',
   touchpoint_name STRING COMMENT '触点名称',
@@ -14,7 +15,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_mk_attribution_report'
 ;
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_ml_attribution_report;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_ml_attribution_report (
   touchpoint_id STRING COMMENT '触点id',
   touchpoint_name STRING COMMENT '触点名称',
@@ -29,7 +30,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_ml_attribution_report'
 
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_attribution_report;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_attribution_report (
     touchpoint_id STRING COMMENT '触点id',
     touchpoint_name STRING COMMENT '触点名称',
@@ -47,7 +48,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_attribution_report'
 ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.app_fir_contact_conversion_report_monthly_a;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversion_report_monthly_a (
   mac_code STRING COMMENT '大区代码',
   rfs_code STRING COMMENT '小区代码',
@@ -67,7 +68,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversio
 location '/user/hive/warehouse/marketing_modeling.db/app_fir_contact_conversion_report_monthly_a'
 ;
 
-DROP TABLE IF EXISTS marketing_modeling.app_fir_contact_conversion_report_weekly_a;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversion_report_weekly_a (
   mac_code STRING COMMENT '大区代码',
   rfs_code STRING COMMENT '小区代码',
@@ -87,7 +88,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_fir_contact_conversio
 location '/user/hive/warehouse/marketing_modeling.db/app_fir_contact_conversion_report_weekly_a'
 ;
 
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_area;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_area (
   area STRING COMMENT '省份',
   brand STRING COMMENT '品牌, MG or RW'
@@ -95,7 +96,6 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_area (
 location '/user/hive/warehouse/marketing_modeling.db/app_dim_area'
 ;
 
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_activity_name;
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_activity_name (
   activity_name STRING COMMENT '活动名称',
   brand STRING COMMENT '品牌, MG or RW'
@@ -104,7 +104,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_dim_activity_name'
 ;
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_car_series;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_car_series (
   fir_contact_series STRING COMMENT '首触车系',
   brand STRING COMMENT '品牌, MG or RW'
@@ -113,7 +113,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_dim_car_series'
 ;
 
 
-DROP  TABLE IF EXISTS marketing_modeling.app_dim_tree_big_small_area;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_dim_tree_big_small_area (
   rfs_code STRING COMMENT '小区代码',
   mac_code STRING COMMENT '大区代码',
@@ -125,7 +125,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_dim_tree_big_small_area
 ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.app_touchpoints_profile_monthly;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_monthly (
   mobile STRING COMMENT '电话号码',
   fir_contact_month STRING COMMENT '首触月份',
@@ -144,7 +144,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_m
 location '/user/hive/warehouse/marketing_modeling.db/app_touchpoints_profile_monthly'
 ;
 
-DROP TABLE IF EXISTS marketing_modeling.app_touchpoints_profile_weekly;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_weekly (
   mobile STRING COMMENT '电话号码',
   fir_contact_week STRING COMMENT '首触周',
@@ -164,7 +164,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_touchpoints_profile_wee
 ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.app_tp_asset_report_a;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_tp_asset_report_a (
 	  touchpoint_level INT COMMENT '触点等级',
 	  touchpoint_id STRING COMMENT '触点码值',
@@ -195,7 +195,7 @@ location '/user/hive/warehouse/marketing_modeling.db/app_tp_asset_report_a'
   ;
 
 
-DROP TABLE IF EXISTS marketing_modeling.cdm_customer_touchpoints_profile_a;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_customer_touchpoints_profile_a (
   mobile STRING COMMENT '电话号码',
   last_fir_contact_date_brand STRING COMMENT '首触时间',
@@ -215,10 +215,28 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.cdm_customer_touchpoints_
 location '/user/hive/warehouse/marketing_modeling.db/cdm_customer_touchpoints_profile_a'
 ;
 
-DROP TABLE IF EXISTS marketing_modeling.app_month_map_week;
+
 CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_month_map_week (
   month_key STRING COMMENT '大区代码',
   clndr_wk_desc STRING COMMENT '小区代码'
 ) STORED AS ORC
 location '/user/hive/warehouse/marketing_modeling.db/app_month_map_week';
+
+
+
+create EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_undeal_report_a (
+mobile string,
+fir_contact_month STRING,
+fir_contact_tp_id STRING,
+tp_id string,
+fir_contact_series STRING,
+mac_code STRING,
+rfs_code STRING,
+area STRING,
+undeal_vol int)
+PARTITIONED BY (
+  pt STRING COMMENT '分区键，yyyymmdd格式的日期，数据生成日期',
+  brand STRING COMMENT '分区键，品牌，MG/RW')
+ STORED AS ORC
+ location '/user/hive/warehouse/marketing_modeling.db/app_undeal_report_a';
 "

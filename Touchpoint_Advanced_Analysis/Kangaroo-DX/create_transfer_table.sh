@@ -98,6 +98,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_touchpoints_profile_m
   is_sec_net STRING COMMENT '是否二网 1:是 0：否',
   activity_name STRING COMMENT '首触活动名称',
   fir_contact_tp_id STRING COMMENT '首触触点id',
+  touchpoint_level string,
+  level_1_tp_id string,
   brand STRING COMMENT '品牌',
   pt STRING COMMENT 'month used by partition, format: yyyymm'
 ) STORED AS ORC
@@ -220,7 +222,6 @@ CREATE EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_month_map_week_t (
 location '/user/hive/warehouse/marketing_modeling.db/app_month_map_week_t';
 
 
-
 DROP TABLE IF EXISTS marketing_modeling.cdm_dim_dealer_employee_info;
 CREATE EXTERNAL TABLE marketing_modeling.cdm_dim_dealer_employee_info(
 id bigint
@@ -264,5 +265,27 @@ id bigint
 ,is_deleted tinyint
 )
 STORED AS orc
-location '/user/hive/warehouse/marketing_modeling.db/cdm_dim_dealer_employee_info'
+location '/user/hive/warehouse/marketing_modeling.db/cdm_dim_dealer_employee_info';
+
+
+
+DROP TABLE IF EXISTS marketing_modeling.app_undeal_report_a_t;
+create EXTERNAL TABLE IF NOT EXISTS marketing_modeling.app_undeal_report_a_t (
+mobile string,
+fir_contact_month STRING,
+fir_contact_tp_id STRING,
+tp_id string,
+fir_contact_series STRING,
+mac_code STRING,
+rfs_code STRING,
+area STRING,
+undeal_vol int,
+pt STRING COMMENT '分区键，yyyymmdd格式的日期，数据生成日期',
+brand STRING COMMENT '分区键，品牌，MG/RW')
+STORED AS ORC
+location '/user/hive/warehouse/marketing_modeling.db/app_undeal_report_a_t';
+
+
+
 "
+

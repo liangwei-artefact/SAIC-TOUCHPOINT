@@ -3,7 +3,7 @@ pt2=$3
 pre_day=$4
 pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
 
-pt1_date=$(date -d "-0 day $pt1 " +'%Y-%m-%d')
+pt1_date=$(date -d "-1 day $pt1 " +'%Y-%m-%d')
 pt2_date=$(date -d "-0 day $pt2 " +'%Y-%m-%d')
 cd $(dirname $(readlink -f $0))
 queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`

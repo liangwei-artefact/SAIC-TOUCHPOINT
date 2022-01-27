@@ -103,8 +103,6 @@ df2.is_sec_net,
 df3.big_customer_flag,
 case when df3.big_customer_flag is not null and df1.brand = 'MG' then '001011000000_tp'
 when df1.dealer_id = '220000000398438' and df1.brand ='MG' then '001003000000_tp'
-when df1.mark in ('order_vhcl','offline') and df1.brand = 'MG' then '001002000000_tp'
-when df1.mark in ('order_vhcl','offline') and df1.brand = 'RW' then '001002000000_rw'
 else df4.touchpoint_id end touchpoint_id
 from
 (
@@ -411,18 +409,18 @@ set hive.exec.dynamic.partition=true;
 
 INSERT overwrite TABLE marketing_modeling.app_touchpoints_profile_monthly PARTITION (pt)
 SELECT
-    mobile,
-    fir_contact_month,
-    fir_contact_date,
-    fir_contact_series,
-    mac_code,
-    rfs_code,
-    area,
-    is_sec_net,
-    activity_name,
-    fir_contact_tp_id,
-    brand,
-    fir_contact_month AS pt
+    mobile
+    ,nvl(fir_contact_month,'') fir_contact_month
+    ,nvl(fir_contact_date,'') fir_contact_date
+    ,nvl(fir_contact_series,'') fir_contact_series
+    ,nvl(mac_code,'') mac_code
+    ,nvl(rfs_code,'') rfs_code
+    ,nvl(area,'') area
+    ,nvl(is_sec_net,'') is_sec_net
+    ,nvl(activity_name,'') activity_name
+    ,nvl(fir_contact_tp_id,'') fir_contact_tp_id
+    ,nvl(brand,'') brand
+    ,fir_contact_month AS pt
 FROM (
     SELECT
         *,
@@ -463,18 +461,18 @@ set hive.exec.dynamic.partition=true;
 
 INSERT OVERWRITE TABLE marketing_modeling.app_touchpoints_profile_weekly PARTITION (pt)
  SELECT
-    mobile,
-    fir_contact_week,
-    fir_contact_date,
-    fir_contact_series,
-    mac_code,
-    rfs_code,
-    area,
-    is_sec_net,
-    activity_name,
-    fir_contact_tp_id,
-    brand,
-    regexp_replace(fir_contact_week, ' ', '') as pt
+    mobile
+    ,nvl(fir_contact_week,'') fir_contact_week
+    ,nvl(fir_contact_date,'') fir_contact_date
+    ,nvl(fir_contact_series,'') fir_contact_series
+    ,nvl(mac_code,'') mac_code
+    ,nvl(rfs_code,'') rfs_code
+    ,nvl(area,'') area
+    ,nvl(is_sec_net,'') is_sec_net
+    ,nvl(activity_name,'') activity_name
+    ,nvl(fir_contact_tp_id,'') fir_contact_tp_id
+    ,nvl(brand,'') brand
+    ,regexp_replace(fir_contact_week, ' ', '') as pt
 FROM (
     SELECT
         *,
@@ -519,7 +517,7 @@ FROM (
     (
     SELECT
         day_key,
-        concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10)) as clndr_wk_desc
+        trim(concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10))) as clndr_wk_desc
     FROM dtwarehouse.cdm_dim_calendar
     GROUP BY day_key, clndr_wk_desc
     ) b

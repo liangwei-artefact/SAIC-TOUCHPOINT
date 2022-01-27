@@ -455,12 +455,18 @@ lead_df = hc.sql('''
             AND pt >= {0} AND pt <= {1}
     ) t1
     WHERE
-        mobile regexp '^[1][3-9][0-9]{{9}}$'
-        AND action_time IS NOT NULL
+        -- mobile regexp '^[1][3-9][0-9]{{9}}$'  AND 
+        action_time IS NOT NULL
         AND touchpoint_id IS NOT NULL
         AND brand IS NOT NULL
 '''.format(pt1, pt2))
 
 # SAVE RESULT
 lead_df.createOrReplaceTempView('lead_df')
-hc.sql('insert overwrite table marketing_modeling.cdm_ts_leads_i PARTITION (pt,brand) select * from lead_df')
+hc.sql('''insert overwrite table marketing_modeling.cdm_ts_leads_i PARTITION (pt,brand) 
+select 
+mobile,
+action_time,
+touchpoint_id,
+pt,brand
+from lead_df''')

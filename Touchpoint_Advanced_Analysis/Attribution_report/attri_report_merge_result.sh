@@ -15,7 +15,7 @@ pt_month=$(date -d "${pt}" +%Y%m)
 
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 cd $(dirname $(readlink -f $0))
-hive -hivevar queuename=$queuename --hivevar pt_month=$pt_month --hivevar brand=$brand -e "
+hive --hivevar queuename=$queuename --hivevar pt_month=$pt_month --hivevar brand=$brand -e "
 set tez.queue.name=${queuename};
 set mapreduce.map.memory.mb=4096;
 set hive.exec.dynamic.partition.mode=nonstrict;

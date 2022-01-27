@@ -1,7 +1,10 @@
 #!/bin/bash
 pt2=$3
 pre_day=$4
+
 pt1=$(date -d "${pt2} -$pre_day day" '+%Y%m%d')
+echo pt1 ${pt1}
+echo pt2 ${pt2}
 cd $(dirname $(readlink -f $0))
 queue_name=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 --hivevar queue_name=${queue_name} -e "
