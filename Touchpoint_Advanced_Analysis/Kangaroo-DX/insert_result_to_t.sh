@@ -208,4 +208,14 @@ undeal_vol ,
 pt ,
 brand
 from marketing_modeling.app_undeal_report_a;
+
+insert overwrite table marketing_modeling.app_other_fir_contact_tp
+SELECT
+DISTINCT
+fir_contact_fir_sour_brand,
+fir_contact_sec_sour_brand,
+brand
+from marketing_modeling.cdm_customer_touchpoints_profile_a
+where touchpoint_id in ('001012000000_rw','001010000000_tp');
+
 "
