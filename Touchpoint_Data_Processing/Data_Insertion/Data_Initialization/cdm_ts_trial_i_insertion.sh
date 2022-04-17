@@ -64,7 +64,7 @@ FROM
         and pt between '${pt1}' and '${pt2}'
         AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') >= '${pt1}'
         AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') <= '${pt2}'
-        and detail['status'] IN ('14021001','14021005','14021006','14021007')
+        and detail['status'] IN ('14021005','14021006')
         and  phone regexp '^[1][3-9][0-9]{9}$'
     ) a 
 ) trial_tp_new

@@ -41,11 +41,11 @@ booking_df = hc.sql('''
            WHEN order_type = 1 AND brand_id='101' THEN '010002000000_rw'
            WHEN order_type = 3 AND brand_id='101' THEN '010001000000_rw' 
         END AS touchpoint_id,
+        date_format(order_date,'yyyyMMdd') as pt,
         CASE WHEN brand_id = '101' THEN 'RW' 
-             WHEN brand_id = '121 'THEN 'MG' 
+             WHEN brand_id = '121' THEN 'MG' 
              ELSE NULL
-        END AS brand,
-        date_format(order_date,'yyyyMMdd') as pt
+        END AS brand
     FROM 
     (
        -- SELECT * FROM dtwarehouse.ods_saicmall_tb_business_order 
@@ -100,7 +100,7 @@ deliver_df = deliver_df.withColumn('brand', F.expr('case when brand_id = 121 the
 # Save Result
 order_df = consume_df.selectExpr('phone as mobile','behavior_time as action_time','touchpoint_id','pt','brand')\
                     .unionAll(deliver_df.selectExpr('phone as mobile','action_time','touchpoint_id','pt','brand'))
-final_df = order_df.unionAll(booking_df)
+final_df = order_df.unionAll(booking_df.selectExpr('mobile','action_time','touchpoint_id','pt','brand'))
 final_df = final_df.filter((col('mobile').rlike("^[1][3-9][0-9]{9}$")) & \
 (col('action_time').isNotNull()) & (col('touchpoint_id').isNotNull()) & (col('brand').isNotNull()))
 

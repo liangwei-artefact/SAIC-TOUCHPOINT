@@ -4,7 +4,6 @@
 # @Author  : Liangwei Chen
 # @FileName: touchpoint_profile_pyspark.py
 # @Software: PyCharm
-# 还是陈某人自己靠谱！！！！！！！！！！！！
 
 
 import sys

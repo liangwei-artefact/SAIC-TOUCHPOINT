@@ -78,7 +78,7 @@ mobile
 ,fir_contact_tp_id
 ,brand
 ,pt
-from marketing_modeling.app_touchpoints_profile_monthly ) a
+from marketing_modeling.app_touchpoints_profile_monthly where pt>='202201') a
 left join
 (
 select
@@ -92,19 +92,15 @@ from marketing_modeling.cdm_touchpoints_id_system
 insert overwrite table marketing_modeling.app_touchpoints_profile_weekly_t
 select
 *
-from marketing_modeling.app_touchpoints_profile_weekly;
+from marketing_modeling.app_touchpoints_profile_weekly where pt>='2022W1';
 
 insert overwrite table marketing_modeling.app_tp_asset_report_a_t
-select
-a.*
-from
-(
 select
 distinct
 touchpoint_level
 ,touchpoint_id
 ,fir_contact_month
-,touchpoint_id fir_contact_tp_id
+,fir_contact_tp_id
 ,cast( int(fir_contact_series) as string) fir_contact_series
 ,mac_code
 ,rfs_code
@@ -126,23 +122,8 @@ touchpoint_level
 ,pt
 ,brand
 from marketing_modeling.app_tp_asset_report_a
-where touchpoint_id !='NaN') a
-inner join
-(
-select
-touchpoint_id,
-touchpoint_level
-from
-marketing_modeling.cdm_touchpoints_id_system
-)b
-on a.fir_contact_tp_id = b.touchpoint_id
+where touchpoint_id !='NaN'
 ;
-
-insert overwrite table marketing_modeling.cdm_customer_touchpoints_profile_a_t
-select
-*
-from marketing_modeling.cdm_customer_touchpoints_profile_a;
-
 
 
 insert overwrite table marketing_modeling.app_dim_tree_big_small_area_t
@@ -191,9 +172,25 @@ insert overwrite table marketing_modeling.app_month_map_week_t
 select
 distinct
 *
-from marketing_modeling.app_month_map_week;
+from marketing_modeling.app_month_map_week where month_key >= '202201';
 
 insert overwrite table marketing_modeling.app_undeal_report_a_t
+select
+a.mobile ,
+a.fir_contact_month ,
+a.fir_contact_tp_id ,
+a.tp_id ,
+a.fir_contact_series ,
+a.mac_code ,
+a.rfs_code ,
+a.area ,
+a.undeal_vol,
+b.touchpoint_level,
+b.level_1_tp_id,
+a.pt,
+a.brand
+from
+(
 select
 distinct
 mobile ,
@@ -207,15 +204,28 @@ area ,
 undeal_vol ,
 pt ,
 brand
-from marketing_modeling.app_undeal_report_a;
+from marketing_modeling.app_undeal_report_a
+) a
+left join
+(
+select
+touchpoint_id,
+touchpoint_level,
+level_1_tp_id,
+brand
+from marketing_modeling.cdm_touchpoints_id_system
+) b on a.fir_contact_tp_id=b.touchpoint_id and a.brand=b.brand;
 
 insert overwrite table marketing_modeling.app_other_fir_contact_tp
 SELECT
-DISTINCT
 fir_contact_fir_sour_brand,
 fir_contact_sec_sour_brand,
 brand
 from marketing_modeling.cdm_customer_touchpoints_profile_a
-where touchpoint_id in ('001012000000_rw','001010000000_tp');
-
+where touchpoint_id in ('001012000000_rw','001012000000_tp')
+and pt>='20220101'
+group by
+fir_contact_fir_sour_brand,
+fir_contact_sec_sour_brand,
+brand
 "

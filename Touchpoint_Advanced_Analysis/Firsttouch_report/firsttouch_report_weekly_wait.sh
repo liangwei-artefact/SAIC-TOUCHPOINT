@@ -40,10 +40,10 @@ WITH calendar_df AS (
 
 filtered_profile_df AS (
 
-  SELECT
+    SELECT
     mobile,
     fir_contact_week,
-    fir_contact_date,
+    from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') fir_contact_date,
     fir_contact_series,
     mac_code,
     rfs_code,
@@ -51,9 +51,15 @@ filtered_profile_df AS (
     is_sec_net,
     activity_name,
     fir_contact_tp_id,
-    brand
-    from
-    (
+    brand,
+    row_number() over(partition by mobile,brand order by fir_contact_date desc) rank_num
+    FROM marketing_modeling.app_touchpoints_profile_weekly
+    where pt <='${pt_week}'
+
+),
+
+partitioned_profile_df AS (
+
     SELECT
         mobile,
         fir_contact_week,
@@ -65,92 +71,121 @@ filtered_profile_df AS (
         is_sec_net,
         activity_name,
         fir_contact_tp_id,
-        brand,
-    row_number() over(partition by mobile,brand order by from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') desc) rank_num
+        brand
     FROM marketing_modeling.app_touchpoints_profile_weekly
-    WHERE regexp_replace(to_date(fir_contact_date), '-', '') <= '${pt}') a
-    where rank_num=1
-),
-
-partitioned_profile_df AS (
-SELECT
-    mobile,
-    fir_contact_week,
-    from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') fir_contact_date,
-    fir_contact_series,
-    mac_code,
-    rfs_code,
-    area,
-    is_sec_net,
-    activity_name,
-    fir_contact_tp_id,
-    brand
-    FROM marketing_modeling.app_touchpoints_profile_weekly
-    where pt ='${pt_week}'
-
-
+    WHERE pt = '${pt_week}'
 
 ),
 
 instore_df AS (
-
-    SELECT
-        raw_instore_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        filtered_profile_df.fir_contact_series,
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand,
-        COUNT(DISTINCT raw_instore_df.mobile) AS instore_vol
-    FROM
-    (     SELECT
-            t.mobile,
-            t.brand,
-            t.action_time,
-            calendar_df.week AS action_week
-        FROM
-        (
-            SELECT
-            phone AS mobile,
-            CASE
-                WHEN detail['brand_id'] = '121' THEN 'MG'
-                WHEN detail['brand_id'] = '101' THEN 'RW'
-                ELSE ''
-            END AS brand,
-            cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
-            date_format(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss'), 'yyyyMM') AS action_month,
-            pt
-        from cdp.cdm_cdp_customer_behavior_detail
-        WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
-        and type='instore'
-        and detail['dealer_code'] not like 'SR%'
-        ) AS t
-        LEFT JOIN calendar_df
-        ON t.pt = calendar_df.full_date
-    ) AS raw_instore_df
-    LEFT JOIN filtered_profile_df
-    ON raw_instore_df.mobile = filtered_profile_df.mobile AND raw_instore_df.brand = filtered_profile_df.brand
-    WHERE
-        filtered_profile_df.mobile IS NOT NULL
-
-    GROUP BY raw_instore_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        filtered_profile_df.fir_contact_series,
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand
-
+      select
+      result.action_week,
+      result.fir_contact_tp_id,
+      result.fir_contact_series,
+      result.mac_code,
+      result.rfs_code,
+      result.area,
+      result.is_sec_net,
+      result.activity_name,
+      result.brand,
+      COUNT(DISTINCT result.mobile) AS instore_vol
+      from
+      (
+      SELECT
+      raw_instore_df.mobile,
+      raw_instore_df.action_week,
+      filtered_profile_df.fir_contact_tp_id,
+      filtered_profile_df.fir_contact_series,
+      filtered_profile_df.mac_code,
+      filtered_profile_df.rfs_code,
+      filtered_profile_df.area,
+      filtered_profile_df.is_sec_net,
+      filtered_profile_df.activity_name,
+      raw_instore_df.brand,
+      row_number() over(partition by
+      raw_instore_df.mobile,
+      raw_instore_df.brand
+      order by filtered_profile_df.fir_contact_date desc) rank_num
+      FROM
+      (     SELECT
+              t.mobile,
+              t.brand,
+              t.action_time,
+              calendar_df.week AS action_week
+          FROM
+          (
+              SELECT
+              phone AS mobile,
+              CASE
+                  WHEN detail['brand_id'] = '121' THEN 'MG'
+                  WHEN detail['brand_id'] = '101' THEN 'RW'
+                  ELSE ''
+              END AS brand,
+              cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+              date_format(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss'), 'yyyyMM') AS action_month,
+              pt
+          from cdp.cdm_cdp_customer_behavior_detail
+          WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+          and type='instore'
+          ) AS t
+          LEFT JOIN (
+      SELECT
+        day_key AS full_date,
+        trim(concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10))) as week
+        FROM dtwarehouse.cdm_dim_calendar
+      GROUP BY day_key, clndr_wk_desc)calendar_df
+          ON t.pt = calendar_df.full_date
+      ) AS raw_instore_df
+      LEFT JOIN (
+          SELECT
+          mobile,
+          fir_contact_week,
+          from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') fir_contact_date,
+          fir_contact_series,
+          mac_code,
+          rfs_code,
+          area,
+          is_sec_net,
+          activity_name,
+          fir_contact_tp_id,
+          brand
+          FROM marketing_modeling.app_touchpoints_profile_weekly
+          where pt <='${pt_week}'
+          )filtered_profile_df
+      ON raw_instore_df.mobile = filtered_profile_df.mobile AND raw_instore_df.brand = filtered_profile_df.brand
+      WHERE
+          filtered_profile_df.fir_contact_date IS NOT NULL
+      )result
+      where result.rank_num=1
+      GROUP by
+      result.action_week,
+      result.fir_contact_tp_id,
+      result.fir_contact_series,
+      result.mac_code,
+      result.rfs_code,
+      result.area,
+      result.is_sec_net,
+      result.activity_name,
+      result.brand
 ),
 
 trial_df AS (
 
-    SELECT
+   select
+result.action_week,
+result.fir_contact_tp_id,
+result.fir_contact_series,
+result.mac_code,
+result.rfs_code,
+result.area,
+result.is_sec_net,
+result.activity_name,
+result.brand,
+COUNT(DISTINCT result.mobile) AS trial_vol
+from
+(
+  SELECT
+        raw_trial_df.mobile,
         raw_trial_df.action_week,
         filtered_profile_df.fir_contact_tp_id,
         filtered_profile_df.fir_contact_series,
@@ -160,7 +195,10 @@ trial_df AS (
         filtered_profile_df.is_sec_net,
         filtered_profile_df.activity_name,
         filtered_profile_df.brand,
-        COUNT(DISTINCT raw_trial_df.mobile) AS trial_vol
+        row_number() over(partition by
+        raw_trial_df.mobile,
+        raw_trial_df.brand
+        order by filtered_profile_df.fir_contact_date) rank_num
     FROM
     (
         SELECT
@@ -170,35 +208,56 @@ trial_df AS (
             calendar_df.week AS action_week
         FROM
         (
-            select
-            phone mobile,
-            CASE
-                WHEN detail['brand_id'] = '121' THEN 'MG'
-                WHEN detail['brand_id'] = '101' THEN 'RW'
-                ELSE ''
-            END AS brand,
-            cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
-            pt
-            from cdp.cdm_cdp_customer_behavior_detail where type='trial'
-            and pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+            SELECT
+                mobile,
+                brand,
+                action_time,
+                pt
+            FROM marketing_modeling.cdm_ts_trial_i
+            WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+            AND touchpoint_id IN ('007003000000_tp', '007004000000_tp', '007003000000_rw', '007004000000_rw')
         ) AS t
-        LEFT JOIN calendar_df
+        LEFT JOIN (
+              SELECT
+                day_key AS full_date,
+                trim(concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10))) as week
+                FROM dtwarehouse.cdm_dim_calendar
+                GROUP BY day_key, clndr_wk_desc
+        )calendar_df
         ON t.pt = calendar_df.full_date
     ) AS raw_trial_df
-    LEFT JOIN filtered_profile_df
+    LEFT JOIN (
+        SELECT
+            mobile,
+            fir_contact_week,
+            from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') fir_contact_date,
+            fir_contact_series,
+            mac_code,
+            rfs_code,
+            area,
+            is_sec_net,
+            activity_name,
+            fir_contact_tp_id,
+            brand
+        FROM marketing_modeling.app_touchpoints_profile_weekly
+        where pt <='${pt_week}'
+    )filtered_profile_df
     ON raw_trial_df.mobile = filtered_profile_df.mobile AND raw_trial_df.brand = filtered_profile_df.brand
     WHERE
-        filtered_profile_df.mobile IS NOT NULL
+        filtered_profile_df.fir_contact_date IS NOT NULL
+)result
+where result.rank_num=1
+GROUP by
+result.action_week,
+result.fir_contact_tp_id,
+result.fir_contact_series,
+result.mac_code,
+result.rfs_code,
+result.area,
+result.is_sec_net,
+result.activity_name,
+result.brand
 
-    GROUP BY raw_trial_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        filtered_profile_df.fir_contact_series,
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand
 
 ),
 
@@ -266,138 +325,187 @@ consume_behavior AS (
     FROM cdp.cdm_cdp_customer_behavior_detail
     WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
     and type ='consume'
-    and detail['dealer_code'] not like 'SR%'),
-app_dtksh_147_ as (
-    select
-    app_dtksh_147_.mobile,
-    app_dtksh_147_.brand,
-    app_dtksh_147_.action_time,
-    cast(cdm_dim_series_.series_id as string) series_id
-    from (
-    select
-    cust_tel as mobile,
-    CASE
-        WHEN chinese_name = 'MG' THEN 'MG'
-        WHEN chinese_name = '荣威' THEN 'RW'
-        ELSE ''
-    END AS brand,
-    ordercreatetime as action_time,
-    dol_series_name
-    from dtwarehouse.app_dtksh_147
-    where rfs_name not like '%RWR%'
-    and  pt='${pt}'
-    AND regexp_replace(to_date(to_utc_timestamp(ordercreatetime,'yyyy-MM-dd HH:mm:ss')), '-', '') >= '${cur_week_start}'
-    AND regexp_replace(to_date(to_utc_timestamp(ordercreatetime,'yyyy-MM-dd HH:mm:ss')), '-', '') <= '${cur_week_end}'
-    ) app_dtksh_147_
-    left join
-    (select
-    series_id,
-    series_chinese_name
-    from dtwarehouse.cdm_dim_series) cdm_dim_series_
-    on app_dtksh_147_.dol_series_name = cdm_dim_series_.series_chinese_name
+
 ),
+
 consume_df AS (
 
-    SELECT
-        raw_consume_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        raw_consume_df.series_id AS fir_contact_series, -- 替换首触车系为订单车系
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand,
-        COUNT(DISTINCT raw_consume_df.mobile) AS consume_vol
-    FROM
-    (
-        SELECT
-            t.mobile,
-            t.brand,
-            t.action_time,
-            calendar_df.week AS action_week,
-            t.series_id
-        FROM
-        (
-        SELECT
-        *,
-        row_number() over(partition by order_union.mobile,order_union.brand order by order_union.action_time) rank_
-        from (
-        SELECT * FROM app_dtksh_147_ ) order_union
-        ) AS t
-        LEFT JOIN calendar_df
-        ON regexp_replace(to_date(t.action_time), '-', '') = calendar_df.full_date
-    ) AS raw_consume_df
-    LEFT JOIN filtered_profile_df
-    ON raw_consume_df.mobile = filtered_profile_df.mobile AND raw_consume_df.brand = filtered_profile_df.brand
-    WHERE
-        filtered_profile_df.mobile IS NOT NULL
+    select
+result.action_week,
+result.fir_contact_tp_id,
+result.fir_contact_series ,
+result.mac_code,
+result.rfs_code,
+result.area,
+result.is_sec_net,
+result.activity_name,
+result.brand,
+COUNT(DISTINCT result.mobile) AS consume_vol
+from
+(
+SELECT
+raw_consume_df.mobile,
+raw_consume_df.action_week,
+filtered_profile_df.fir_contact_tp_id,
+raw_consume_df.series_id AS fir_contact_series, -- 替换首触车系为订单车系
+filtered_profile_df.mac_code,
+filtered_profile_df.rfs_code,
+filtered_profile_df.area,
+filtered_profile_df.is_sec_net,
+filtered_profile_df.activity_name,
+filtered_profile_df.brand,
+row_number() over(partition by
+raw_consume_df.mobile,
+raw_consume_df.brand
+order by filtered_profile_df.fir_contact_date desc) rank_num
+FROM
+(
+SELECT
+    t.mobile,
+    t.brand,
+    t.action_time,
+    calendar_df.week AS action_week,
+    t.series_id
+FROM
+(
+    SELECT * FROM xianjiaoche
+    UNION ALL
+    SELECT * FROM consume_behavior
+) AS t
+LEFT JOIN (
+     SELECT
+      day_key AS full_date,
+      trim(concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10))) as week
+      FROM dtwarehouse.cdm_dim_calendar
+    GROUP BY day_key, clndr_wk_desc
+)calendar_df
+ON regexp_replace(to_date(t.action_time), '-', '') = calendar_df.full_date
+) AS raw_consume_df
+LEFT JOIN (
+     SELECT
+    mobile,
+    fir_contact_week,
+    from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') fir_contact_date,
+    fir_contact_series,
+    mac_code,
+    rfs_code,
+    area,
+    is_sec_net,
+    activity_name,
+    fir_contact_tp_id,
+    brand,
+    row_number() over(partition by mobile,brand order by fir_contact_date desc) rank_num
+    FROM marketing_modeling.app_touchpoints_profile_weekly
+    where pt <='${pt_week}'
+)filtered_profile_df
+ON raw_consume_df.mobile = filtered_profile_df.mobile AND raw_consume_df.brand = filtered_profile_df.brand
+WHERE
+filtered_profile_df.fir_contact_date IS NOT NULL
+) result
+group by
+result.action_week,
+result.fir_contact_tp_id,
+result.fir_contact_series ,
+result.mac_code,
+result.rfs_code,
+result.area,
+result.is_sec_net,
+result.activity_name,
+result.brand
 
-    GROUP BY raw_consume_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        raw_consume_df.series_id ,
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand
 
 ),
 
 deliver_df AS (
 
+    select
+result.action_week,
+result.fir_contact_tp_id,
+result.fir_contact_series,
+result.mac_code,
+result.rfs_code,
+result.area,
+result.is_sec_net,
+result.activity_name,
+result.brand,
+COUNT(DISTINCT result.mobile) AS deliver_vol
+from(
+SELECT
+raw_deliver_df.mobile,
+raw_deliver_df.action_week,
+filtered_profile_df.fir_contact_tp_id,
+raw_deliver_df.series_id AS fir_contact_series, -- 替换首触车系为交车车系
+filtered_profile_df.mac_code,
+filtered_profile_df.rfs_code,
+filtered_profile_df.area,
+filtered_profile_df.is_sec_net,
+filtered_profile_df.activity_name,
+filtered_profile_df.brand,
+row_number() over(partition by
+raw_deliver_df.mobile,
+raw_deliver_df.brand
+order by filtered_profile_df.fir_contact_date desc) rank_num
+from (
+SELECT
+    t.mobile,
+    t.brand,
+    t.action_time,
+    t.series_id,
+    calendar_df.week AS action_week
+FROM
+(
     SELECT
-        raw_deliver_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        raw_deliver_df.series_id AS fir_contact_series, -- 替换首触车系为交车车系
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand,
-        COUNT(DISTINCT raw_deliver_df.mobile) AS deliver_vol
-    FROM (
-        SELECT
-            t.mobile,
-            t.brand,
-            t.action_time,
-            t.series_id,
-            calendar_df.week AS action_week
-        FROM
-        (
-            SELECT
-                phone AS mobile,
-                CASE
-                    WHEN detail['brand_id'] = '121' THEN 'MG'
-                    WHEN detail['brand_id'] = '101' THEN 'RW'
-                    ELSE ''
-                END AS brand,
-                cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
-                detail['series_id'] series_id
-            FROM cdp.cdm_cdp_customer_behavior_detail
-            WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
-            and type = 'deliver'
-            and detail['dealer_code'] not like 'SR%'
-        ) AS t
-        LEFT JOIN calendar_df
-        ON regexp_replace(to_date(t.action_time), '-', '') = calendar_df.full_date
-    ) AS raw_deliver_df
-    LEFT JOIN filtered_profile_df
-    ON raw_deliver_df.mobile = filtered_profile_df.mobile AND raw_deliver_df.brand = filtered_profile_df.brand
-    WHERE
-        filtered_profile_df.mobile IS NOT NULL
-
-    GROUP BY raw_deliver_df.action_week,
-        filtered_profile_df.fir_contact_tp_id,
-        raw_deliver_df.series_id,
-        filtered_profile_df.mac_code,
-        filtered_profile_df.rfs_code,
-        filtered_profile_df.area,
-        filtered_profile_df.is_sec_net,
-        filtered_profile_df.activity_name,
-        filtered_profile_df.brand
+        phone AS mobile,
+        CASE
+            WHEN detail['brand_id'] = '121' THEN 'MG'
+            WHEN detail['brand_id'] = '101' THEN 'RW'
+            ELSE ''
+        END AS brand,
+        cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
+        detail['series_id'] series_id
+    FROM cdp.cdm_cdp_customer_behavior_detail
+    WHERE pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
+    and type = 'deliver'
+) AS t
+LEFT JOIN (
+     SELECT
+      day_key AS full_date,
+      trim(concat(substr(clndr_wk_desc,3, 5), substr(clndr_wk_desc,9, 10))) as week
+      FROM dtwarehouse.cdm_dim_calendar
+    GROUP BY day_key, clndr_wk_desc
+)calendar_df
+ON regexp_replace(to_date(t.action_time), '-', '') = calendar_df.full_date
+) AS raw_deliver_df
+LEFT JOIN (
+    SELECT
+    mobile,
+    fir_contact_week,
+    from_unixtime(unix_timestamp(fir_contact_date),'yyyy-MM-dd hh:mm:ss') fir_contact_date,
+    fir_contact_series,
+    mac_code,
+    rfs_code,
+    area,
+    is_sec_net,
+    activity_name,
+    fir_contact_tp_id,
+    brand,
+    row_number() over(partition by mobile,brand order by fir_contact_date desc) rank_num
+    FROM marketing_modeling.app_touchpoints_profile_weekly
+    where pt <='${pt_week}'
+)filtered_profile_df
+ON raw_deliver_df.mobile = filtered_profile_df.mobile AND raw_deliver_df.brand = filtered_profile_df.brand
+WHERE
+filtered_profile_df.fir_contact_date IS NOT NULL
+) result
+GROUP BY result.action_week,
+result.fir_contact_tp_id,
+result.fir_contact_series,
+result.mac_code,
+result.rfs_code,
+result.area,
+result.is_sec_net,
+result.activity_name,
+result.brand
 
 ),
 
@@ -570,7 +678,6 @@ ON
     profile_df.activity_name = deliver_df.activity_name AND
     profile_df.brand = deliver_df.brand
 )
-
 
 INSERT overwrite TABLE marketing_modeling.app_fir_contact_conversion_report_weekly_a PARTITION (pt)
 SELECT

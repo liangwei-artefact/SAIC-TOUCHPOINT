@@ -13,11 +13,18 @@ pt=$3
 pt_month=$(date -d "${pt}" +%Y%m)
 this_month_start=$(date -d "${pt_month}01" +%Y%m%d)
 this_month_end=$(date -d "${this_month_start} +1 month -1 day" +%Y%m%d)
+
+pt_week_01=$(date -d "-1 day ${pt}" +'%YW%U')
+b='W'
+pt_week=${pt_week_01/W0/"$b"}
+cur_week_start=$(date -d "${pt} -$(date -d "${pt}" +%u) days +1 day" +%Y%m%d)
+cur_week_end=$(date -d "${pt} -$(date -d "${pt}" +%u) days +7 day" +%Y%m%d)
+
 cd $(dirname $(readlink -f $0))
 
 queuename=`awk -F '=' '/\[HIVE\]/{a=1}a==1&&$1~/queue/{print $2;exit}'  config.ini`
 
-hive -hivevar queuename=$queuename --hivevar pt=$pt --hivevar pt_month=$pt_month --hivevar this_month_start=$this_month_start --hivevar this_month_end=$this_month_end -e "
+hive --hivevar cur_week_start=$cur_week_start --hivevar cur_week_end=$cur_week_end --hivevar queuename=$queuename --hivevar pt=$pt --hivevar pt_month=$pt_month --hivevar this_month_start=$this_month_start --hivevar this_month_end=$this_month_end -e "
 set tez.queue.name=${queuename};
 set hive.exec.dynamic.partition.mode=nonstrict;
 set hive.groupby.position.alias=true;
@@ -63,7 +70,7 @@ r2.brand_id,
 r2.series_id,
 r2.behavior_time,
 r2.pt,
-row_number() over(partition by r1.mobile,r1.last_fir_contact_date_brand order by r2.behavior_time) num
+row_number() over(partition by r1.mobile,r1.brand,r1.last_fir_contact_date_brand order by r2.behavior_time) num
 from
 (
 SELECT
@@ -81,7 +88,7 @@ result.mac_code,
 result.rfs_code,
 result.is_sec_net,
 result.big_customer_flag,
-case when result.touchpoint_id is null and result.brand = 'MG' then '001010000000_tp'
+case when result.touchpoint_id is null and result.brand = 'MG' then '001012000000_tp'
 when result.touchpoint_id is null and result.brand = 'RW' then '001012000000_rw'
 else result.touchpoint_id end touchpoint_id
 from
@@ -103,6 +110,7 @@ df2.is_sec_net,
 df3.big_customer_flag,
 case when df3.big_customer_flag is not null and df1.brand = 'MG' then '001011000000_tp'
 when df1.dealer_id = '220000000398438' and df1.brand ='MG' then '001003000000_tp'
+when df1.mark in ('order_vhcl','offline') and df1.brand = 'MG' then '001002000000_tp'
 else df4.touchpoint_id end touchpoint_id
 from
 (
@@ -352,6 +360,7 @@ SELECT
         and type = 'oppor'
 		AND pt >= ${this_month_start}
 		and phone is not null and trim(phone) !=''
+		and detail['dealer_code'] not like 'SR%'
 union
 SELECT
 	phone AS mobile,
@@ -365,7 +374,7 @@ SELECT
         and type = 'trial'
 		AND pt >= ${this_month_start}
 		and phone is not null and trim(phone) !=''
-
+    and detail['dealer_code'] not like 'SR%'
 union
 SELECT
 	phone AS mobile,
@@ -379,6 +388,7 @@ SELECT
 		and type='consume'
 		AND pt >= ${this_month_start}
 		and phone is not null and trim(phone) !=''
+		and detail['dealer_code'] not like 'SR%'
 union
 SELECT
 	phone AS mobile,
@@ -392,10 +402,10 @@ SELECT
 		and type='deliver'
 		AND pt >= ${this_month_start}
 		and phone is not null and trim(phone) !=''
+		and detail['dealer_code'] not like 'SR%'
 ) series_df
 ) r2
-on r1.mobile=r2.mobile
-where to_date(r1.last_fir_contact_date_brand) <= to_date(r2.behavior_time)  ) rr
+on r1.mobile=r2.mobile ) rr
 where rr.num=1;
 
 
@@ -449,7 +459,7 @@ FROM (
             pt >= ${this_month_start} AND pt <= ${this_month_end}
         ) raw_profile_df
 ) AS t
-WHERE rank_num = 1;
+WHERE rank_num = 1 ;
 
 set tez.queue.name=${queuename};
 set hive.exec.dynamic.partition.mode=nonstrict;
@@ -511,7 +521,7 @@ FROM (
         pt
     FROM marketing_modeling.cdm_customer_touchpoints_profile_a
     WHERE
-        pt >= ${this_month_start} AND pt <= ${this_month_end}
+        pt >= ${cur_week_start} AND pt <= ${cur_week_end}
     ) a
     left join
     (
@@ -533,6 +543,7 @@ SELECT
 	area,
 	brand
 FROM marketing_modeling.cdm_customer_touchpoints_profile_a
+where pt>='20190101'
 GROUP BY area,brand;
 
 
@@ -541,6 +552,7 @@ SELECT
 	activity_name,
 	brand
 FROM marketing_modeling.cdm_customer_touchpoints_profile_a
+where pt>='20190101'
 GROUP BY activity_name,brand;
 
 
@@ -556,6 +568,7 @@ fir_contact_series_brand fir_contact_series,
 brand
 from
 marketing_modeling.cdm_customer_touchpoints_profile_a
+where pt>='20190101'
 ) a
 inner join
 (
@@ -602,6 +615,7 @@ fir_contact_week
 from marketing_modeling.app_touchpoints_profile_weekly
 )  b on a.clndr_wk_desc = b.fir_contact_week
  where substr(a.month_key,0,4)=substr(a.clndr_wk_desc,0,4)
+ and a.month_key <= '${pt_month}'
  ;
 
 INSERT OVERWRITE TABLE marketing_modeling.cdm_dim_dealer_employee_info

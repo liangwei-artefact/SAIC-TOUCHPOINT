@@ -21,6 +21,7 @@ CREATE  TABLE IF NOT EXISTS marketing_modeling.cdm_lead_source_mapping (
     sec_level_sour string COMMENT '触点二级行为',
     third_level_sour string COMMENT '触点三级行为',
     sour_detail string COMMENT '触点行为细节',
+    businesstypecode string COMMENT '业务模块',
     fir_lead_source string COMMENT '一级线索来源',
     sec_lead_source string COMMENT '二级线索来源', 
     touchpoint_id string COMMENT '触点ID',

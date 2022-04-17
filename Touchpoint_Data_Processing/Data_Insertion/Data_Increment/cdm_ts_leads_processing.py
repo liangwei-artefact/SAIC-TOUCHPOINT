@@ -543,7 +543,37 @@ lead_df = hc.sql('''
 
                 WHEN detail['brand_id'] = 101 THEN rw_lead_source_id_mapping(CONCAT(CONCAT(detail['first_resource_name'],'_'), detail['second_resource_name']))
             END AS touchpoint_id,
+            pt, SELECT * FROM
+    (
+        SELECT 
+            phone AS mobile,
+            detail['behavior_time'] AS action_time,
+            CASE 
+                WHEN detail['brand_id'] = 121 AND (detail['first_resource_name'] IS NULL OR length(detail['first_resource_name']) = 0) 
+                AND (detail['second_resource_name'] IS NULL OR length(detail['second_resource_name']) = 0) THEN '001010000000_tp'
+                WHEN detail['brand_id'] = 121 AND (detail['first_resource_name'] IN ('经销商网销主动开拓','展厅主动开拓'))
+                AND (detail['second_resource_name'] IS NULL OR length(detail['second_resource_name']) = 0) THEN '001007003000_tp' 
+                WHEN detail['brand_id'] = 121 AND (detail['first_resource_name'] IS NULL OR length(detail['first_resource_name']) = 0)
+                AND (detail['second_resource_name'] = '厂方的网销其他平台') THEN '001004003008_tp'
+                WHEN detail['brand_id'] = 121 THEN mg_lead_source_id_mapping(CONCAT(CONCAT(detail['first_resource_name'],'_'), detail['second_resource_name']))
+
+                WHEN detail['brand_id'] = 101 THEN rw_lead_source_id_mapping(CONCAT(CONCAT(detail['first_resource_name'],'_'), detail['second_resource_name']))
+            END AS touchpoint_id,
             pt,
+            CASE
+                WHEN detail['brand_id'] = 121 THEN 'MG'
+                WHEN detail['brand_id'] = 101 THEN 'RW'
+            ELSE NULL END AS brand
+        FROM cdp.cdm_cdp_customer_behavior_detail
+        WHERE 
+            TYPE ='leads'
+      AND pt >= {0}
+    ) t1
+    WHERE
+        mobile regexp '^[1][3-9][0-9]{{9}}$'
+        AND action_time IS NOT NULL
+        AND touchpoint_id IS NOT NULL
+        AND brand IS NOT NULL
             CASE
                 WHEN detail['brand_id'] = 121 THEN 'MG'
                 WHEN detail['brand_id'] = 101 THEN 'RW'

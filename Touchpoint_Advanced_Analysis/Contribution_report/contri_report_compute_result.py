@@ -52,7 +52,7 @@ filtered_profile_df = pd.read_csv('{0}_filtered_profile_df.csv'.format(brand), s
 filtered_profile_df['mobile'] = filtered_profile_df['mobile'].astype('string')
 filtered_profile_df['fir_contact_date'] = pd.to_datetime(filtered_profile_df['fir_contact_date'])
 ## 去掉经销商销售号码
-mobile_to_remove_list = pd.read_csv('mobile_to_remove.csv', names = ['mobile']).mobile.unique()
+mobile_to_remove_list = pd.read_csv('mobile_to_remove.csv', names=['mobile']).mobile.unique()
 mobile_to_remove_list = [str(i) for i in mobile_to_remove_list]
 filtered_profile_df = filtered_profile_df[filtered_profile_df.mobile.isin(mobile_to_remove_list) == False]
 
@@ -63,7 +63,8 @@ all_touchpoint_df['mobile'] = all_touchpoint_df['mobile'].astype('string').str.r
 ## 关联首触表和触点大竖表，获取首触用户的触点行为
 tp_profile_df = filtered_profile_df.merge(all_touchpoint_df, on='mobile', how='left')
 ## 只考虑其首触日算起6个月内的行为
-tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() <= tp_profile_df['action_time'].dt.normalize()]
+# 这里的时间不予考虑
+#tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() <= tp_profile_df['action_time'].dt.normalize()]
 tp_profile_df = tp_profile_df[tp_profile_df['fir_contact_date'].dt.normalize() + pd.DateOffset(months=6) >= tp_profile_df['action_time'].dt.normalize()]
 tp_profile_df['mobile'] = tp_profile_df['mobile'].astype('int64')
 
@@ -88,7 +89,7 @@ agged_profile_df = agged_profile_df.rename(columns={'mobile':'cust_vol'})
 order_df = all_touchpoint_df.query("tp_id in ('{0}', '{1}')".format(consume_tp_id_1, consume_tp_id_2))\
                               .groupby(by='mobile')['action_time'].max().reset_index()\
                               .rename(columns={'action_time':'last_order_time'})\
-                              .assign(action_month=lambda x: x.last_order_time.dt.strftime('%Y%m') )
+                              .assign(action_month=lambda x: x.last_order_time.dt.strftime('%Y%m'))
 order_df['mobile'] = order_df['mobile'].astype('int')
 
 ## 只保留未成交用户
@@ -121,6 +122,7 @@ consume_df['mobile'] = consume_df['mobile'].astype('int')
 indicators_df = tp_profile_df.merge(instore_df, on='mobile', how='left')\
                              .merge(trial_df, on='mobile', how='left')\
                              .merge(consume_df, on='mobile', how='left')
+### 这些都不要
 indicators_df = indicators_df.assign(instore_flag=np.where(indicators_df['fir_contact_date'].dt.normalize() <= indicators_df['last_instore_time'].dt.normalize(), 1, 0))\
                              .assign(trial_flag=np.where(indicators_df['fir_contact_date'].dt.normalize() <= indicators_df['last_trial_time'].dt.normalize(), 1, 0))\
                              .assign(consume_flag=np.where(indicators_df['fir_contact_date'].dt.normalize() <= indicators_df['last_consume_time'].dt.normalize(), 1, 0))\
