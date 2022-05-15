@@ -146,6 +146,7 @@ trial_df AS (
         cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
         date_format(cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string), 'yyyyMM') AS action_month
         from cdp.cdm_cdp_customer_behavior_detail where type='trial'
+        and detail['dealer_code'] not like 'SR%'
         and pt >= '${cur_month_start}' AND pt <= '${cur_month_end}'
     ) AS raw_trial_df
     LEFT JOIN filtered_profile_df
@@ -529,7 +530,7 @@ INSERT overwrite TABLE marketing_modeling.app_fir_contact_conversion_report_mont
 SELECT
     mac_code,
     rfs_code,
-	area,
+    area,
     is_sec_net,
     activity_name,
     fir_contact_tp_id,

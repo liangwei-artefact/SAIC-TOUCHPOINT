@@ -80,8 +80,9 @@ SELECT
 	FROM 
 	(
 		SELECT 
-			user_id, 
-			publish_date AS action_time, 
+			user_id,
+			to_utc_timestamp(publish_date,'yyyy-MM-dd HH:mm:ss')
+			AS action_time,
 			CASE 
 				WHEN brand_type = 2 THEN '002003001001_tp'
 				WHEN brand_type = 1 THEN '002002006001_rw'
@@ -101,7 +102,8 @@ SELECT
 
 		SELECT 
 			saic_user_id AS user_id,
-			publish_time AS action_time, 
+			to_utc_timestamp(publish_time,'yyyy-MM-dd HH:mm:ss')
+			 AS action_time,
 			CASE 
 				WHEN brand_type = 2 THEN '002003001001_tp'
 				WHEN brand_type = 1 THEN '002002006001_rw'
@@ -120,8 +122,9 @@ SELECT
 		UNION ALL
 
 		SELECT 
-			user_id, 
-			create_date AS action_time, 
+			user_id,
+			to_utc_timestamp(create_date,'yyyy-MM-dd HH:mm:ss')
+			 AS action_time,
 			CASE WHEN brand_type = 2 THEN '002003001002_tp'
 			WHEN brand_type = 1 THEN '002002006002_rw'
 			ELSE NULL END AS touchpoint_id, -- 发布新闻
@@ -139,8 +142,9 @@ SELECT
 		UNION ALL
 
 		SELECT 
-			publisher_id AS user_id, 
-			create_time AS action_time,
+			publisher_id AS user_id,
+			to_utc_timestamp(create_time,'yyyy-MM-dd HH:mm:ss')
+			 AS action_time,
 			CASE 
 				WHEN brand_type = 2 THEN '002003001003_tp'
 				WHEN brand_type = 1 THEN '002002006003_rw'

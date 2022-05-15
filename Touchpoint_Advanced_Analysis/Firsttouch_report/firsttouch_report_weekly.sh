@@ -180,6 +180,7 @@ trial_df AS (
             cast(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss') as string) AS action_time,
             pt
             from cdp.cdm_cdp_customer_behavior_detail where type='trial'
+            and detail['dealer_code'] not like 'SR%'
             and pt >= '${cur_week_start}' AND pt <= '${cur_week_end}'
         ) AS t
         LEFT JOIN calendar_df

@@ -26,7 +26,7 @@ cast(pt as string) pt,
 cast(brand as string) brand
 FROM
 (
-	SELECT 
+	SELECT
 		t.mobile AS mobile,
 		t.starttime AS action_time,
 		CASE
@@ -64,8 +64,10 @@ FROM
 			date_format(t.starttime,'yyyyMMdd') AS pt
 	FROM
 	(
-		SELECT 
-		mobile,TYPE,module,starttime,staff_brand
+		SELECT
+		mobile,TYPE,module,
+		starttime starttime,
+		staff_brand
 		FROM
     (
       select
@@ -80,7 +82,7 @@ FROM
      AND regexp_replace(to_date(to_utc_timestamp(detail['behavior_time'],'yyyy-MM-dd HH:mm:ss')), '-', '') <= ${pt2}
       and type = 'SCRM'
     ) SCRM
-		WHERE 
+		WHERE
 			mobile regexp '^[1][3-9][0-9]{9}$'
 			AND TYPE IS NOT NULL
 			AND module IS NOT NULL
@@ -90,7 +92,8 @@ FROM
 
 	SELECT
 		check_in_mobile AS mobile,
-		apply_date AS action_time,
+		 to_utc_timestamp(apply_date,'yyyy-MM-dd HH:mm:ss')
+		 AS action_time,
 		CASE
 			 WHEN brand_id = 121 THEN '008001010002_tp' -- SCRM活动签到
 			 WHEN brand_id = 101 THEN '008001010002_rw'
@@ -101,7 +104,7 @@ FROM
 			 ELSE NULL
 		END AS brand,
 		date_format(apply_date,'yyyyMMdd') AS pt
-	FROM 
+	FROM
 	(SELECT * FROM dtwarehouse.ods_scrm_saic_activity_apply_cust
 		WHERE
 			pt = ${pt2}
@@ -110,19 +113,20 @@ FROM
 	)a
 	LEFT JOIN
 	(
-		SELECT 
+		SELECT
 			id, brand_id
 		FROM (SELECT id, dealer_id FROM dtwarehouse.ods_dlm_t_cust_base WHERE pt = ${pt2}) a
 		LEFT JOIN (SELECT dlm_org_id, brand_id FROM dtwarehouse.ods_rdp_v_sales_region_dealer WHERE pt = ${pt2}) b
 		ON a.dealer_id = b.dlm_org_id
-	) b 
+	) b
 	ON a.cust_id = b.id
 
 	UNION ALL
 
-	SELECT 
+	SELECT
 		mobile,
-		add_time AS action_time,
+		to_utc_timestamp(add_time,'yyyy-MM-dd HH:mm:ss')
+		AS action_time,
 		CASE
 			 WHEN brand_id = 121 THEN '009001000000_tp' -- 添加销售代表企业微信
 			 WHEN brand_id = 101 THEN '009001000000_rw'
@@ -133,12 +137,12 @@ FROM
 			ELSE NULL
 		END AS brand,
 		date_format(add_time,'yyyyMMdd') AS pt
-	FROM 
+	FROM
 	(
-		SELECT 
+		SELECT
 			mobile,dealer_id,add_time,pt
 		 FROM dtwarehouse.ods_scrm_crm_customer_add
-		 WHERE 
+		 WHERE
 			pt = ${pt2}
 			AND mobile regexp '^[1][3-9][0-9]{9}$'
 			AND regexp_replace(to_date(add_time), '-', '') >= ${pt1}
