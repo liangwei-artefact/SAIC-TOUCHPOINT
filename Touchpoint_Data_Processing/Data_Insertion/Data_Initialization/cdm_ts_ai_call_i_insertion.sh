@@ -9,7 +9,7 @@ hive --hivevar pt1=$pt1 --hivevar pt2=$pt2 --hivevar queue_name=${queue_name} -e
 set tez.queue.name=${queue_name};
 SET hive.exec.max.dynamic.partitions=2048;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
-INSERT OVERWRITE TABLE marketing_modeling.c PARTITION(pt,brand)
+INSERT OVERWRITE TABLE marketing_modeling.cdm_ts_ai_call_i PARTITION(pt,brand)
 SELECT
 mobile,
 action_time,

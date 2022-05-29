@@ -108,7 +108,7 @@ df2.mac_code,
 df2.rfs_code,
 df2.is_sec_net,
 df3.big_customer_flag,
-case when df3.big_customer_flag is not null and df1.brand = 'MG' then '001011000000_tp'
+case
 when df1.dealer_id = '220000000398438' and df1.brand ='MG' then '001003000000_tp'
 when df1.mark in ('order_vhcl','offline') and df1.brand = 'MG' then '001002000000_tp'
 else df4.touchpoint_id end touchpoint_id
